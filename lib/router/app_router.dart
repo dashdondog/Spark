@@ -6,6 +6,7 @@ import '../pages/booking_page.dart';
 import '../pages/company_dashboard_page.dart';
 import '../pages/not_found_page.dart';
 import '../pages/clinic_management_page.dart';
+import '../pages/clinic_login_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -35,6 +36,10 @@ final appRouter = GoRouter(
           serviceId: serviceId,
         );
       },
+    ),
+    GoRoute(
+      path: '/clinic-login',
+      builder: (context, state) => const ClinicLoginPage(),
     ),
     GoRoute(
       path: '/company',

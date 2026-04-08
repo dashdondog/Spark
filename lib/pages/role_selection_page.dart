@@ -155,7 +155,7 @@ class RoleSelectionPage extends StatelessWidget {
           SizedBox(
             height: 52,
             child: OutlinedButton.icon(
-              onPressed: () => context.go('/company'),
+              onPressed: () => context.go('/clinic-login'),
               icon: const Icon(Icons.business_outlined, size: 20),
               label: const Text('Эмч / Клиник'),
             ),
