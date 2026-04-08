@@ -1057,17 +1057,17 @@ class _ProfileTab extends StatelessWidget {
               child: Column(
                 children: [
                   _menuItem(context, Icons.person_outline_rounded,
-                      'Хувийн мэдээлэл', const Color(0xFF1B75BC)),
+                      'Хувийн мэдээлэл', const Color(0xFF1B75BC),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _ProfileEditPage()))),
                   _menuItem(context, Icons.calendar_today_outlined,
-                      'Миний захиалгууд', const Color(0xFF00BFA5)),
-                  _menuItem(context, Icons.favorite_outline_rounded,
-                      'Дуртай эмчид', const Color(0xFFE91E63)),
-                  _menuItem(context, Icons.payment_outlined, 'Төлбөрийн арга',
-                      const Color(0xFF7C4DFF)),
+                      'Миний захиалгууд', const Color(0xFF00BFA5),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _MyBookingsPage()))),
                   _menuItem(context, Icons.notifications_outlined,
-                      'Мэдэгдэл', const Color(0xFFFF7043)),
+                      'Мэдэгдэл', const Color(0xFFFF7043),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _NotificationsPage()))),
                   _menuItem(context, Icons.help_outline_rounded,
-                      'Тусламж', const Color(0xFF607D8B)),
+                      'Тусламж', const Color(0xFF607D8B),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _HelpPage()))),
                   const SizedBox(height: 16),
                   _logoutButton(context),
                 ],
@@ -1222,7 +1222,7 @@ class _ProfileTab extends StatelessWidget {
     IconData icon,
     String label,
     Color iconColor, {
-    bool isLogout = false,
+    VoidCallback? onTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -1241,26 +1241,248 @@ class _ProfileTab extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: iconColor.withValues(alpha:0.12),
+            color: iconColor.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: iconColor, size: 20),
         ),
         title: Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isLogout ? AppTheme.error : AppTheme.textDark,
+            color: AppTheme.textDark,
           ),
         ),
-        trailing: isLogout
-            ? null
-            : const Icon(Icons.chevron_right_rounded,
-                color: AppTheme.textLight, size: 20),
+        trailing: const Icon(Icons.chevron_right_rounded,
+            color: AppTheme.textLight, size: 20),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        onTap: () {},
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+// ── Profile Edit Page ─────────────────────────────────────────────────────────
+class _ProfileEditPage extends StatefulWidget {
+  const _ProfileEditPage();
+  @override
+  State<_ProfileEditPage> createState() => _ProfileEditPageState();
+}
+
+class _ProfileEditPageState extends State<_ProfileEditPage> {
+  final _nameCtrl = TextEditingController(text: 'John Doe');
+  final _emailCtrl = TextEditingController(text: 'john@example.com');
+  final _phoneCtrl = TextEditingController(text: '+976 9900 0000');
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text('Хувийн мэдээлэл'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            Container(
+              width: 90, height: 90,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primaryDark]),
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Text('J', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+              ),
+            ),
+            const SizedBox(height: 28),
+            TextField(controller: _nameCtrl,
+                decoration: const InputDecoration(labelText: 'Нэр', prefixIcon: Icon(Icons.person_outline_rounded))),
+            const SizedBox(height: 16),
+            TextField(controller: _emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'И-мэйл', prefixIcon: Icon(Icons.email_outlined))),
+            const SizedBox(height: 16),
+            TextField(controller: _phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(labelText: 'Утас', prefixIcon: Icon(Icons.phone_outlined))),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Мэдээлэл хадгалагдлаа'), backgroundColor: Colors.green));
+                },
+                child: const Text('Хадгалах'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── My Bookings Page ──────────────────────────────────────────────────────────
+class _MyBookingsPage extends StatelessWidget {
+  const _MyBookingsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text('Миний захиалгууд'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Consumer<BookingProvider>(
+        builder: (context, provider, _) {
+          final bookings = provider.bookings;
+          if (bookings.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircleAvatar(radius: 45, backgroundColor: AppTheme.primaryLight,
+                      child: Icon(Icons.calendar_today_outlined, size: 40, color: AppTheme.primary)),
+                  SizedBox(height: 20),
+                  Text('Захиалга байхгүй байна',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+                  SizedBox(height: 8),
+                  Text('Анхны захиалгаа хий',
+                      style: TextStyle(fontSize: 13, color: AppTheme.textLight)),
+                ],
+              ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: bookings.length,
+            itemBuilder: (_, i) {
+              final b = bookings[i];
+              final clinic = provider.getClinicById(b.clinicId);
+              final service = provider.getServiceById(b.serviceId);
+              return _AppointmentCard(
+                booking: b,
+                clinicName: clinic?.name ?? 'Unknown',
+                serviceName: service?.name ?? 'Unknown',
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ── Notifications Page ────────────────────────────────────────────────────────
+class _NotificationsPage extends StatelessWidget {
+  const _NotificationsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text('Мэдэгдэл'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(radius: 45, backgroundColor: AppTheme.primaryLight,
+                child: Icon(Icons.notifications_none_rounded, size: 44, color: AppTheme.primary)),
+            SizedBox(height: 20),
+            Text('Мэдэгдэл байхгүй байна',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+            SizedBox(height: 8),
+            Text('Шинэ мэдэгдэл ирэхэд энд харагдана',
+                style: TextStyle(fontSize: 13, color: AppTheme.textLight)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Help Page ─────────────────────────────────────────────────────────────────
+class _HelpPage extends StatelessWidget {
+  const _HelpPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      appBar: AppBar(
+        title: const Text('Тусламж'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 8),
+          _helpCard(Icons.phone_outlined, 'Утас', '+976 7700 0000', const Color(0xFF1B75BC)),
+          _helpCard(Icons.email_outlined, 'И-мэйл', 'support@clinicbook.mn', const Color(0xFF00BFA5)),
+          _helpCard(Icons.access_time_outlined, 'Ажлын цаг', 'Да-Ба: 09:00-18:00', const Color(0xFFFF7043)),
+          _helpCard(Icons.location_on_outlined, 'Хаяг', 'Улаанбаатар, Монгол', const Color(0xFF7C4DFF)),
+        ],
+      ),
+    );
+  }
+
+  Widget _helpCard(IconData icon, String label, String value, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48, height: 48,
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textLight)),
+              const SizedBox(height: 2),
+              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textDark)),
+            ],
+          ),
+        ],
       ),
     );
   }
