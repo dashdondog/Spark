@@ -14,6 +14,10 @@ class CompanyDashboardPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context).companyDashboard),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -419,7 +423,7 @@ class CompanyDashboardPage extends StatelessWidget {
           onSelected: (value) {
             switch (value) {
               case 'edit':
-                context.go('/clinic/${clinic.id}/manage');
+                context.push('/clinic/${clinic.id}/manage');
                 break;
               case 'view':
                 // TODO: Navigate to clinic details

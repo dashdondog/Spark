@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/booking_provider.dart';
@@ -259,6 +260,16 @@ class _ClinicManagementPageState extends State<ClinicManagementPage> {
         return Scaffold(
           appBar: AppBar(
             title: Text('Клиникин мэдээлэл засварлах'),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/company');
+                }
+              },
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.save),

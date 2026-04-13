@@ -59,6 +59,17 @@ class ClinicProfilePage extends StatelessWidget {
     return SliverAppBar(
       expandedHeight: 250,
       pinned: true,
+      foregroundColor: Colors.black,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.black),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/customer');
+          }
+        },
+      ),
       flexibleSpace: FlexibleSpaceBar(
         background: CachedNetworkImage(
           imageUrl: clinic.imageUrl,
@@ -349,7 +360,7 @@ class ClinicProfilePage extends StatelessWidget {
                 const Spacer(),
                 ElevatedButton(
                   onPressed: () {
-                    context.go('/book/$clinicId/${service.id}');
+                    context.push('/book/$clinicId/${service.id}');
                   },
                   child: const Text('Одоо захиалах'),
                 ),

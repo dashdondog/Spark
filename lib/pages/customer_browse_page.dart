@@ -29,6 +29,10 @@ class _CustomerBrowsePageState extends State<CustomerBrowsePage> {
       appBar: AppBar(
         title: Text(AppLocalizations.of(context).browseClinics),
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
       ),
       body: Consumer<BookingProvider>(
         builder: (context, provider, child) {
@@ -76,7 +80,7 @@ class _CustomerBrowsePageState extends State<CustomerBrowsePage> {
                           return ClinicCard(
                             clinic: clinic,
                             onTap: () {
-                              context.go('/clinic/${clinic.id}');
+                              context.push('/clinic/${clinic.id}');
                             },
                           );
                         },

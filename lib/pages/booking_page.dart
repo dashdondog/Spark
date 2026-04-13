@@ -56,6 +56,16 @@ class _BookingPageState extends State<BookingPage> {
           return Scaffold(
             appBar: AppBar(
               title: Text(AppLocalizations.of(context).bookAppointment),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/clinic/${widget.clinicId}');
+                  }
+                },
+              ),
             ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -92,7 +102,7 @@ class _BookingPageState extends State<BookingPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Захиалгын дүн',
+              'Захиалгын дүнasd',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),

@@ -33,7 +33,7 @@ class ClinicConnectApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       routerConfig: appRouter,
       localizationsDelegates: [
         AppLocalizations.delegate,
