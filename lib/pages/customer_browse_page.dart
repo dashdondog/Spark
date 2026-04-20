@@ -1584,7 +1584,7 @@ class _ProfileTab extends StatelessWidget {
                 onPressed: () async {
                   Navigator.pop(ctx);
                   await context.read<AuthProvider>().signOut();
-                  if (context.mounted) context.go('/');
+                  if (context.mounted) context.go('/role');
                 },
                 child: const Text(
                   'Гарах',

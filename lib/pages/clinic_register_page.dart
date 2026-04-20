@@ -97,7 +97,7 @@ class _ClinicRegisterPageState extends State<ClinicRegisterPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+          onPressed: () => context.canPop() ? context.pop() : context.go('/role'),
         ),
       ),
       body: SafeArea(
@@ -294,7 +294,7 @@ class _ClinicRegisterPageState extends State<ClinicRegisterPage> {
                 const SizedBox(height: 16),
                 Center(
                   child: GestureDetector(
-                    onTap: () => context.go('/'),
+                    onTap: () => context.go('/login/clinic'),
                     child: RichText(
                       text: const TextSpan(
                         style: TextStyle(fontSize: 13, color: AppTheme.textLight),

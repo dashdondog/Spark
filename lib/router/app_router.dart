@@ -10,12 +10,17 @@ import '../pages/clinic_management_page.dart';
 import '../pages/company_profile_page.dart';
 import '../pages/customer_register_page.dart';
 import '../pages/clinic_register_page.dart';
+import '../pages/onboarding_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(
       path: '/',
+      builder: (context, state) => const OnboardingPage(),
+    ),
+    GoRoute(
+      path: '/role',
       builder: (context, state) => const RoleSelectionPage(),
     ),
     GoRoute(

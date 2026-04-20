@@ -285,7 +285,7 @@ class _ClinicLoginPageState extends State<ClinicLoginPage> {
   Widget _buildBackButton() {
     return OutlinedButton.icon(
       onPressed: () {
-        context.go('/');
+        context.canPop() ? context.pop() : context.go('/role');
       },
       icon: const Icon(Icons.arrow_back_outlined, size: 18),
       label: const Text('Буцах'),

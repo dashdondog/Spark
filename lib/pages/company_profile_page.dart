@@ -333,7 +333,7 @@ class _CompanyProfilePageState extends State<CompanyProfilePage> {
             onPressed: () {
               Navigator.pop(ctx);
               Future.microtask(() {
-                if (context.mounted) context.go('/');
+                if (context.mounted) context.go('/role');
               });
             },
             child: const Text('Гарах',
