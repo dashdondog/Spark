@@ -35,7 +35,6 @@ class ClinicProfilePage extends StatelessWidget {
                 child: Column(
                   children: [
                     _ProfileCard(clinic: clinic),
-                    _StatsRow(clinic: clinic),
                     _AboutSection(clinic: clinic),
                     _ContactSection(clinic: clinic),
                     _ServicesSection(services: services, clinicId: clinicId),
@@ -396,89 +395,6 @@ class _ProfileCard extends StatelessWidget {
   }
 }
 
-// ── Stats Row ────────────────────────────────────────────────────────────────
-class _StatsRow extends StatelessWidget {
-  final Clinic clinic;
-
-  const _StatsRow({required this.clinic});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      child: Row(
-        children: [
-          _StatCard(
-              value: '1.2k+',
-              label: 'Өвчтөн',
-              icon: Icons.people_outline_rounded,
-              color: AppTheme.primary),
-          const SizedBox(width: 12),
-          _StatCard(
-              value: '8+',
-              label: 'Жил туршлага',
-              icon: Icons.workspace_premium_outlined,
-              color: const Color(0xFFFF7043)),
-          const SizedBox(width: 12),
-          _StatCard(
-              value: '128',
-              label: 'Сэтгэгдэл',
-              icon: Icons.star_outline_rounded,
-              color: AppTheme.star),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String value;
-  final String label;
-  final IconData icon;
-  final Color color;
-
-  const _StatCard({
-    required this.value,
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: const [
-            BoxShadow(
-                color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 6),
-            Text(
-              value,
-              style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textDark),
-            ),
-            Text(
-              label,
-              style:
-                  const TextStyle(fontSize: 11, color: AppTheme.textLight),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ── About Section ────────────────────────────────────────────────────────────
 class _AboutSection extends StatelessWidget {

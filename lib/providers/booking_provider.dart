@@ -60,10 +60,18 @@ class BookingProvider extends ChangeNotifier {
   Future<void> refresh() async {
     _isRefreshing = true;
     notifyListeners();
-    await Future.wait([
+    final results = await Future.wait([
       _db.collection('clinics').get(),
       _db.collection('services').get(),
     ]);
+    _clinics = (results[0] as QuerySnapshot)
+        .docs
+        .map((d) => Clinic.fromFirestore(d))
+        .toList();
+    _services = (results[1] as QuerySnapshot)
+        .docs
+        .map((d) => Service.fromFirestore(d))
+        .toList();
     _isRefreshing = false;
     notifyListeners();
   }

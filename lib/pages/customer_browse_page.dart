@@ -90,26 +90,27 @@ class _HomeTabState extends State<_HomeTab> {
 
   static const List<Map<String, dynamic>> _categories = [
     {
-      'icon': Icons.local_hospital,
+      'icon': Icons.local_hospital_rounded,
       'label': 'Ерөнхий',
       'color': Color(0xFF1B75BC),
     },
     {
-      'icon': Icons.medical_services,
-      'label': 'Шүдний',
+      'icon': Icons.medical_services_rounded,
+      'emoji': '🦷',
+      'label': 'Шүд',
       'color': Color(0xFFFF7043),
     },
-    {'icon': Icons.favorite, 'label': 'Зүрх', 'color': Color(0xFFE91E63)},
+    {'icon': Icons.favorite_rounded, 'label': 'Зүрх', 'color': Color(0xFFE91E63)},
     {
-      'icon': Icons.accessibility_new,
+      'icon': Icons.accessibility_new_rounded,
       'label': 'Яс',
       'color': Color(0xFF4CAF50),
     },
-    {'icon': Icons.child_care, 'label': 'Хүүхэд', 'color': Color(0xFF9C27B0)},
-    {'icon': Icons.hearing, 'label': 'ХЧЧ', 'color': Color(0xFF00BFA5)},
-    {'icon': Icons.remove_red_eye, 'label': 'Нүд', 'color': Color(0xFF3F51B5)},
-    {'icon': Icons.more_horiz, 'label': 'Бусад', 'color': Color(0xFF607D8B)},
+    {'icon': Icons.child_care_rounded, 'label': 'Хүүхэд', 'color': Color(0xFF9C27B0)},
+    {'icon': Icons.hearing_rounded, 'label': 'ЧИХ', 'color': Color(0xFF00BFA5)},
+    {'icon': Icons.remove_red_eye_rounded, 'label': 'Нүд', 'color': Color(0xFF3F51B5)},
   ];
+
 
   @override
   void dispose() {
@@ -238,7 +239,12 @@ class _HomeTabState extends State<_HomeTab> {
           const SizedBox(width: 8),
           // Notification bell
           GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const _NotificationsPage(),
+              ),
+            ),
             child: Container(
               width: 42,
               height: 42,
@@ -272,27 +278,33 @@ class _HomeTabState extends State<_HomeTab> {
           ),
           const SizedBox(width: 10),
           // Avatar
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppTheme.primary, AppTheme.primaryDark],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: const Center(
-              child: Text(
-                'J',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
+          Consumer<AuthProvider>(
+            builder: (context, auth, _) {
+              final name = auth.displayName ?? auth.email ?? '?';
+              final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+              return Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primary, AppTheme.primaryDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(13),
                 ),
-              ),
-            ),
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -412,8 +424,21 @@ class _HomeTabState extends State<_HomeTab> {
         itemBuilder: (context, index) {
           final cat = _categories[index];
           final color = cat['color'] as Color;
+          final label = cat['label'] as String;
+          final emoji = cat['emoji'] as String?;
+          final iconData = cat['icon'] as IconData;
           return GestureDetector(
-            onTap: () {},
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => _CategoryPage(
+                  label: label,
+                  icon: iconData,
+                  emoji: emoji,
+                  color: color,
+                ),
+              ),
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -421,14 +446,33 @@ class _HomeTabState extends State<_HomeTab> {
                   width: 58,
                   height: 58,
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.12),
+                    color: emoji != null
+                        ? Colors.white
+                        : color.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
+                    boxShadow: emoji != null
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.08),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
                   ),
-                  child: Icon(cat['icon'] as IconData, color: color, size: 26),
+                  child: emoji != null
+                      ? Center(
+                          child: Text(
+                            emoji,
+                            style: const TextStyle(fontSize: 28),
+                            textAlign: TextAlign.center,
+                          ),
+                        )
+                      : Icon(iconData, color: color, size: 26),
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  cat['label'] as String,
+                  label,
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppTheme.textMedium,
@@ -595,8 +639,10 @@ class _HomeTabState extends State<_HomeTab> {
     return Consumer<BookingProvider>(
       builder: (context, provider, child) {
         final clinics = provider.clinics.where((c) {
-          return c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          final matchesSearch =
+              c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
               c.address.toLowerCase().contains(_searchQuery.toLowerCase());
+          return matchesSearch;
         }).toList();
 
         if (clinics.isEmpty) {
@@ -933,7 +979,7 @@ class _AppointmentsTab extends StatelessWidget {
   }
 }
 
-class _AppointmentCard extends StatelessWidget {
+class _AppointmentCard extends StatefulWidget {
   final Booking booking;
   final String clinicName;
   final String serviceName;
@@ -945,98 +991,198 @@ class _AppointmentCard extends StatelessWidget {
   });
 
   @override
+  State<_AppointmentCard> createState() => _AppointmentCardState();
+}
+
+class _AppointmentCardState extends State<_AppointmentCard> {
+  late final _timer = Stream.periodic(const Duration(seconds: 1));
+  late final _sub = _timer.listen((_) { if (mounted) setState(() {}); });
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+
+  String _countdown() {
+    final now = DateTime.now();
+    final diff = widget.booking.dateTime.difference(now);
+    if (diff.isNegative) return 'Дууссан';
+    final days = diff.inDays;
+    final hours = diff.inHours % 24;
+    final mins = diff.inMinutes % 60;
+    final secs = diff.inSeconds % 60;
+    if (days > 0) return '$days өдөр $hours цаг $mins мин';
+    if (hours > 0) return '$hours цаг $mins мин $secs сек';
+    return '$mins мин $secs сек';
+  }
+
+  static const _statusColors = {
+    BookingStatus.confirmed: AppTheme.success,
+    BookingStatus.pending: AppTheme.warning,
+    BookingStatus.cancelled: AppTheme.error,
+    BookingStatus.completed: AppTheme.textLight,
+  };
+  static const _statusLabels = {
+    BookingStatus.confirmed: 'Баталгаажсан',
+    BookingStatus.pending: 'Хүлээгдэж буй',
+    BookingStatus.cancelled: 'Цуцлагдсан',
+    BookingStatus.completed: 'Дууссан',
+  };
+
+  @override
   Widget build(BuildContext context) {
-    final statusColors = {
-      BookingStatus.confirmed: AppTheme.success,
-      BookingStatus.pending: AppTheme.warning,
-      BookingStatus.cancelled: AppTheme.error,
-      BookingStatus.completed: AppTheme.textLight,
-    };
-    final statusLabels = {
-      BookingStatus.confirmed: 'Баталгаажсан',
-      BookingStatus.pending: 'Хүлээгдэж буй',
-      BookingStatus.cancelled: 'Цуцлагдсан',
-      BookingStatus.completed: 'Дууссан',
-    };
+    final dt = widget.booking.dateTime;
+    final dateStr =
+        '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+    final timeStr =
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    final statusColor = _statusColors[widget.booking.status]!;
+    final isPast = widget.booking.dateTime.isBefore(DateTime.now());
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
-          BoxShadow(
-            color: Color(0x0C000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Color(0x0C000000), blurRadius: 12, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryLight,
-                  borderRadius: BorderRadius.circular(12),
+          // ── Header ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryLight,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.local_hospital_rounded,
+                      color: AppTheme.primary, size: 20),
                 ),
-                child: const Icon(
-                  Icons.local_hospital_rounded,
-                  color: AppTheme.primary,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  clinicName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: AppTheme.textDark,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.clinicName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: AppTheme.textDark,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.serviceName,
+                        style: const TextStyle(
+                            fontSize: 12, color: AppTheme.textLight),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColors[booking.status]!.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  statusLabels[booking.status]!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: statusColors[booking.status],
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _statusLabels[widget.booking.status]!,
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: statusColor),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
+
           Container(height: 1, color: AppTheme.divider),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _chip(Icons.medical_services_outlined, serviceName),
-              const SizedBox(width: 14),
-              _chip(
-                Icons.calendar_today_outlined,
-                '${booking.dateTime.day}/${booking.dateTime.month}/${booking.dateTime.year}',
-              ),
-            ],
+
+          // ── Date row ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined,
+                    size: 14, color: AppTheme.textLight),
+                const SizedBox(width: 6),
+                Text(
+                  dateStr,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textDark),
+                ),
+                const SizedBox(width: 12),
+                const Icon(Icons.access_time_rounded,
+                    size: 14, color: AppTheme.textLight),
+                const SizedBox(width: 4),
+                Text(
+                  timeStr,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textDark),
+                ),
+                const Spacer(),
+                _chip(Icons.person_outline_rounded,
+                    widget.booking.customerName),
+              ],
+            ),
           ),
-          const SizedBox(height: 6),
-          _chip(Icons.person_outline_rounded, booking.customerName),
+
+          // ── Countdown timer ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isPast
+                    ? AppTheme.textLight.withValues(alpha: 0.08)
+                    : AppTheme.primary.withValues(alpha: 0.07),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPast
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.timer_outlined,
+                    size: 14,
+                    color: isPast ? AppTheme.textLight : AppTheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _countdown(),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          isPast ? AppTheme.textLight : AppTheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1046,16 +1192,13 @@ class _AppointmentCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: AppTheme.textLight),
+        Icon(icon, size: 13, color: AppTheme.textLight),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppTheme.textMedium,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textMedium,
+                fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -1396,11 +1539,20 @@ class _ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final name = auth.displayName?.isNotEmpty == true
+        ? auth.displayName!
+        : auth.email ?? 'Хэрэглэгч';
+    final email = auth.email ?? '';
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       body: CustomScrollView(
         slivers: [
-          SliverToBoxAdapter(child: _buildProfileHeader(context)),
+          SliverToBoxAdapter(
+            child: _buildProfileHeader(context, name, email, initial),
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -1463,7 +1615,20 @@ class _ProfileTab extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
+  Widget _buildProfileHeader(
+    BuildContext context,
+    String name,
+    String email,
+    String initial,
+  ) {
+    final bookings = context.watch<BookingProvider>().bookings;
+    final total = bookings.length;
+    final upcoming = bookings
+        .where((b) =>
+            b.dateTime.isAfter(DateTime.now()) &&
+            b.status != BookingStatus.cancelled)
+        .length;
+
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
@@ -1488,10 +1653,10 @@ class _ProfileTab extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Center(
+            child: Center(
               child: Text(
-                'J',
-                style: TextStyle(
+                initial,
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -1500,38 +1665,31 @@ class _ProfileTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            'John Doe',
-            style: TextStyle(
+          Text(
+            name,
+            style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
               color: AppTheme.textDark,
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'john@example.com',
-            style: TextStyle(fontSize: 13, color: AppTheme.textLight),
+          Text(
+            email,
+            style: const TextStyle(fontSize: 13, color: AppTheme.textLight),
           ),
           const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _statBadge('12', 'Захиалга'),
+              _statBadge('$total', 'Захиалга'),
               Container(
                 width: 1,
                 height: 28,
                 color: AppTheme.divider,
                 margin: const EdgeInsets.symmetric(horizontal: 20),
               ),
-              _statBadge('3', 'Удахгүй'),
-              Container(
-                width: 1,
-                height: 28,
-                color: AppTheme.divider,
-                margin: const EdgeInsets.symmetric(horizontal: 20),
-              ),
-              _statBadge('5', 'Дуртай'),
+              _statBadge('$upcoming', 'Удахгүй'),
             ],
           ),
         ],
@@ -1684,9 +1842,21 @@ class _ProfileEditPage extends StatefulWidget {
 }
 
 class _ProfileEditPageState extends State<_ProfileEditPage> {
-  final _nameCtrl = TextEditingController(text: 'John Doe');
-  final _emailCtrl = TextEditingController(text: 'john@example.com');
-  final _phoneCtrl = TextEditingController(text: '+976 9900 0000');
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _emailCtrl;
+  late final TextEditingController _phoneCtrl;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final auth = context.read<AuthProvider>();
+    _nameCtrl = TextEditingController(text: auth.displayName ?? '');
+    _emailCtrl = TextEditingController(text: auth.email ?? '');
+    _phoneCtrl = TextEditingController(
+      text: auth.currentUser?.phoneNumber ?? '',
+    );
+  }
 
   @override
   void dispose() {
@@ -1696,8 +1866,40 @@ class _ProfileEditPageState extends State<_ProfileEditPage> {
     super.dispose();
   }
 
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await context.read<AuthProvider>().currentUser
+          ?.updateDisplayName(_nameCtrl.text.trim());
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Мэдээлэл хадгалагдлаа'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Хадгалахад алдаа гарлаа'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final initial = _nameCtrl.text.isNotEmpty
+        ? _nameCtrl.text[0].toUpperCase()
+        : (_emailCtrl.text.isNotEmpty ? _emailCtrl.text[0].toUpperCase() : '?');
+
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
@@ -1721,10 +1923,10 @@ class _ProfileEditPageState extends State<_ProfileEditPage> {
                 ),
                 shape: BoxShape.circle,
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'J',
-                  style: TextStyle(
+                  initial,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
@@ -1735,6 +1937,7 @@ class _ProfileEditPageState extends State<_ProfileEditPage> {
             const SizedBox(height: 28),
             TextField(
               controller: _nameCtrl,
+              textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
                 labelText: 'Нэр',
                 prefixIcon: Icon(Icons.person_outline_rounded),
@@ -1743,10 +1946,18 @@ class _ProfileEditPageState extends State<_ProfileEditPage> {
             const SizedBox(height: 16),
             TextField(
               controller: _emailCtrl,
+              readOnly: true,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'И-мэйл',
-                prefixIcon: Icon(Icons.email_outlined),
+                prefixIcon: const Icon(Icons.email_outlined),
+                filled: true,
+                fillColor: Colors.grey[100],
+                suffixIcon: const Tooltip(
+                  message: 'И-мэйл өөрчлөх боломжгүй',
+                  child: Icon(Icons.lock_outline_rounded,
+                      size: 16, color: Colors.grey),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -1762,16 +1973,17 @@ class _ProfileEditPageState extends State<_ProfileEditPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Мэдээлэл хадгалагдлаа'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                },
-                child: const Text('Хадгалах'),
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Хадгалах'),
               ),
             ),
           ],
@@ -1994,6 +2206,207 @@ class _HelpPage extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Category Page ─────────────────────────────────────────────────────────────
+class _CategoryPage extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final String? emoji;
+  final Color color;
+
+  const _CategoryPage({
+    required this.label,
+    required this.icon,
+    this.emoji,
+    required this.color,
+  });
+
+  // null = бүх клиник (Ерөнхий)
+  static const Map<String, List<String>?> _keywords = {
+    'Ерөнхий': null,
+    'Шүд':     ['шүд', 'dental', 'smile', 'bright'],
+    'Зүрх':    ['зүрх', 'heart', 'cardio', 'vascular'],
+    'Яс':      ['яс', 'ortho', 'bone', 'sports'],
+    'Хүүхэд':  ['хүүхэд', 'child', 'pediatr', "children"],
+    'ЧИХ':     ['чих', 'ear', 'хамар', 'хоолой', 'ent'],
+    'Нүд':     ['нүд', 'eye', 'vision', 'харалт', 'care'],
+  };
+
+  bool _matches(Clinic clinic) {
+    final keys = _keywords[label];
+    if (keys == null) return true;
+    final haystack = [
+      clinic.name,
+      clinic.address,
+      clinic.description,
+    ].join(' ').toLowerCase();
+    return keys.any((k) => haystack.contains(k));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.background,
+      body: Consumer<BookingProvider>(
+        builder: (context, provider, _) {
+          final clinics = provider.clinics.where(_matches).toList();
+          return RefreshIndicator(
+            color: color,
+            onRefresh: () => provider.refresh(),
+            child: CustomScrollView(
+              slivers: [
+                // ── Colored header ──
+                SliverAppBar(
+                  pinned: true,
+                  expandedHeight: 140,
+                  backgroundColor: color,
+                  leading: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            color,
+                            color.withValues(alpha: 0.75),
+                          ],
+                        ),
+                      ),
+                      child: SafeArea(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(height: 32),
+                            Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.25),
+                                shape: BoxShape.circle,
+                              ),
+                              child: emoji != null
+                                  ? Center(
+                                      child: Text(
+                                        emoji!,
+                                        style: const TextStyle(fontSize: 28),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    )
+                                  : Icon(icon, color: Colors.white, size: 28),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              label,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    titlePadding: const EdgeInsets.only(left: 56, bottom: 14),
+                  ),
+                ),
+
+                // ── Subtitle / count ──
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 6),
+                    child: provider.isRefreshing
+                        ? const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Text(
+                            '${clinics.length} клиник олдлоо',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textLight,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                  ),
+                ),
+
+                // ── Empty state ──
+                if (clinics.isEmpty && !provider.isRefreshing)
+                  SliverFillRemaining(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: emoji != null
+                                ? Center(
+                                    child: Text(
+                                      emoji!,
+                                      style: const TextStyle(fontSize: 36),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                : Icon(icon, color: color, size: 36),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '$label чиглэлийн клиник олдсонгүй',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // ── Clinic list ──
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _ClinicListCard(
+                          clinic: clinics[index],
+                          onTap: () =>
+                              context.push('/clinic/${clinics[index].id}'),
+                        ),
+                      ),
+                      childCount: clinics.length,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
