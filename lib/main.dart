@@ -18,7 +18,8 @@ void main() async {
   SharedPreferences.setPrefix('clinic_connect_');
 
   final bookingProvider = BookingProvider();
-  await bookingProvider.seedInitialData();
+  // Run seed in background — don't block app startup
+  bookingProvider.seedInitialData();
 
   runApp(
     MultiProvider(
