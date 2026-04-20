@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 
 class ClinicLoginPage extends StatefulWidget {
@@ -15,6 +17,7 @@ class _ClinicLoginPageState extends State<ClinicLoginPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  String? _error;
 
   @override
   void dispose() {
@@ -24,24 +27,42 @@ class _ClinicLoginPageState extends State<ClinicLoginPage> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _isLoading = true; _error = null; });
+
+    final auth = context.read<AuthProvider>();
+    final error = await auth.signIn(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+
+    if (!mounted) return;
+    setState(() { _isLoading = false; _error = error; });
+    if (error == null) context.go('/company');
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Имэйл хаягаа оруулаад дахин дарна уу')),
+      );
       return;
     }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    // Simulate authentication delay
-    await Future.delayed(const Duration(seconds: 2));
-
-    // TODO: Implement actual authentication logic
-    // For now, we'll just navigate to the dashboard
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-      context.go('/company');
+    try {
+      await context.read<AuthProvider>().sendPasswordReset(email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Нууц үг сэргээх имэйл илгээгдлээ'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Имэйл илгээхэд алдаа гарлаа')),
+      );
     }
   }
 
@@ -59,6 +80,29 @@ class _ClinicLoginPageState extends State<ClinicLoginPage> {
               _buildHeader(),
               const SizedBox(height: 40),
               _buildLoginForm(),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red.shade700, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               _buildLoginButton(),
               const SizedBox(height: 16),
@@ -190,12 +234,7 @@ class _ClinicLoginPageState extends State<ClinicLoginPage> {
           Align(
             alignment: Alignment.centerRight,
             child: TextButton(
-              onPressed: () {
-                // TODO: Implement forgot password functionality
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Нууц үг сэргээх функц тун удахгүй')),
-                );
-              },
+              onPressed: _handleForgotPassword,
               child: const Text(
                 'Нууц үгээ мартсан уу?',
                 style: TextStyle(

@@ -40,6 +40,10 @@ class AuthProvider extends ChangeNotifier {
     await _auth.signOut();
   }
 
+  Future<void> sendPasswordReset(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
   String _errorMessage(String code) {
     switch (code) {
       case 'user-not-found':
