@@ -52,9 +52,8 @@ class RoleSelectionPage extends StatelessWidget {
                         'Цаг захиалах',
                         'Захиалгын түүх',
                       ],
-                      onLogin: () => context.go('/customer'),
-                      onRegister: () =>
-                          context.push('/register/customer'),
+                      onLogin: () => context.push('/login/customer'),
+                      onRegister: () => context.push('/login/customer'),
                     ),
                     const SizedBox(height: 14),
                     _RoleCard(
@@ -71,8 +70,8 @@ class RoleSelectionPage extends StatelessWidget {
                         'Захиалга удирдах',
                         'Тайлан харах',
                       ],
-                      onLogin: () => context.go('/company'),
-                      onRegister: () => context.push('/register/clinic'),
+                      onLogin: () => context.push('/login/clinic'),
+                      onRegister: () => context.push('/login/clinic'),
                     ),
                     const SizedBox(height: 20),
                     const Center(

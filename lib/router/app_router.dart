@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import '../pages/role_selection_page.dart';
+import '../pages/login_page.dart';
 import '../pages/customer_browse_page.dart';
 import '../pages/clinic_profile_page.dart';
 import '../pages/booking_page.dart';
@@ -16,6 +17,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const RoleSelectionPage(),
+    ),
+    GoRoute(
+      path: '/login/:role',
+      builder: (context, state) {
+        final role = state.pathParameters['role']!;
+        return LoginPage(role: role);
+      },
     ),
     GoRoute(
       path: '/customer',

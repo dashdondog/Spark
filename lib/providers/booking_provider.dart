@@ -1,246 +1,154 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 
 class BookingProvider extends ChangeNotifier {
-  final List<Booking> _bookings = [];
-  final List<Clinic> _clinics = [];
-  final List<Service> _services = [];
+  final _db = FirebaseFirestore.instance;
+  final _storage = FirebaseStorage.instance;
 
-  List<Booking> get bookings => List.unmodifiable(_bookings);
+  List<Clinic> _clinics = [];
+  List<Service> _services = [];
+  List<Booking> _bookings = [];
+
   List<Clinic> get clinics => List.unmodifiable(_clinics);
   List<Service> get services => List.unmodifiable(_services);
+  List<Booking> get bookings => List.unmodifiable(_bookings);
 
   bool _isRefreshing = false;
   bool get isRefreshing => _isRefreshing;
 
   BookingProvider() {
-    _initializeMockData();
+    _listenClinics();
+    _listenServices();
+    _listenBookings();
+  }
+
+  // ── Real-time listeners ───────────────────────────────────────────────────
+
+  void _listenClinics() {
+    _db.collection('clinics').snapshots().listen((snap) {
+      _clinics = snap.docs.map((d) => Clinic.fromFirestore(d)).toList();
+      notifyListeners();
+    });
+  }
+
+  void _listenServices() {
+    _db.collection('services').snapshots().listen((snap) {
+      _services = snap.docs.map((d) => Service.fromFirestore(d)).toList();
+      notifyListeners();
+    });
+  }
+
+  void _listenBookings() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    Query query = _db.collection('bookings');
+    if (uid != null) {
+      query = query.where('userId', isEqualTo: uid);
+    }
+    query.snapshots().listen((snap) {
+      _bookings = snap.docs
+          .map((d) => Booking.fromFirestore(d))
+          .toList()
+        ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      notifyListeners();
+    });
   }
 
   Future<void> refresh() async {
     _isRefreshing = true;
     notifyListeners();
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.wait([
+      _db.collection('clinics').get(),
+      _db.collection('services').get(),
+    ]);
     _isRefreshing = false;
     notifyListeners();
   }
 
-  void _initializeMockData() {
-    // ── Services ──────────────────────────────────────────────────────────
-    _services.addAll([
-      Service(
-        id: '1',
-        name: 'General Consultation',
-        description: 'General health check-up and consultation',
-        duration: 30,
-        price: 50.0,
-      ),
-      Service(
-        id: '2',
-        name: 'Dental Check-up',
-        description: 'Full dental examination and cleaning',
-        duration: 45,
-        price: 80.0,
-      ),
-      Service(
-        id: '3',
-        name: 'Vaccination',
-        description: 'Routine immunization services',
-        duration: 15,
-        price: 25.0,
-      ),
-      Service(
-        id: '4',
-        name: 'Physical Therapy',
-        description: 'Rehabilitation and therapeutic sessions',
-        duration: 60,
-        price: 120.0,
-      ),
-      Service(
-        id: '5',
-        name: 'Cardiology Exam',
-        description: 'Heart health assessment and ECG',
-        duration: 45,
-        price: 150.0,
-      ),
-      Service(
-        id: '6',
-        name: 'Pediatric Check-up',
-        description: 'Child health monitoring and growth assessment',
-        duration: 30,
-        price: 60.0,
-      ),
-      Service(
-        id: '7',
-        name: 'Orthopedic Consult',
-        description: 'Bone, joint and muscle evaluation',
-        duration: 40,
-        price: 100.0,
-      ),
-      Service(
-        id: '8',
-        name: 'Eye Examination',
-        description: 'Complete vision test and eye health check',
-        duration: 30,
-        price: 70.0,
-      ),
-      Service(
-        id: '9',
-        name: 'Skin Consultation',
-        description: 'Dermatology assessment and treatment plan',
-        duration: 30,
-        price: 90.0,
-      ),
-      Service(
-        id: '10',
-        name: 'Blood Test Panel',
-        description: 'Comprehensive blood work and lab analysis',
-        duration: 20,
-        price: 45.0,
-      ),
-    ]);
+  // ── Bookings ──────────────────────────────────────────────────────────────
 
-    // ── Clinics ───────────────────────────────────────────────────────────
-    _clinics.addAll([
-      Clinic(
-        id: '1',
-        name: 'City Medical Center',
-        address: '123 Main Street, Downtown',
-        phone: '+1 (555) 123-4567',
-        email: 'info@citymedical.com',
-        rating: 4.5,
-        imageUrl: '',
-        description:
-            'A comprehensive medical center providing high-quality healthcare services with state-of-the-art facilities and a team of experienced specialists dedicated to your well-being.',
-        services: ['1', '2', '3'],
-        photos: [
-          'https://picsum.photos/seed/clinic1a/600/400',
-          'https://picsum.photos/seed/clinic1b/600/400',
-          'https://picsum.photos/seed/clinic1c/600/400',
-        ],
-      ),
-      Clinic(
-        id: '2',
-        name: 'Family Health Clinic',
-        address: '456 Oak Avenue, Westside',
-        phone: '+1 (555) 987-6543',
-        email: 'contact@familyhealth.com',
-        rating: 4.8,
-        imageUrl: '',
-        description:
-            'Your trusted family healthcare provider offering compassionate and personalized medical care for every member of your family, from newborns to seniors.',
-        services: ['1', '4', '6'],
-        photos: [
-          'https://picsum.photos/seed/clinic2a/600/400',
-          'https://picsum.photos/seed/clinic2b/600/400',
-        ],
-      ),
-      Clinic(
-        id: '3',
-        name: 'Bright Smile Dental',
-        address: '789 Elm Road, Northpark',
-        phone: '+1 (555) 234-5678',
-        email: 'hello@brightsmile.com',
-        rating: 4.7,
-        imageUrl: '',
-        description:
-            'A modern dental clinic specializing in cosmetic and preventive dentistry. We use the latest technology to ensure comfortable and effective treatments.',
-        services: ['2', '10'],
-        photos: [
-          'https://picsum.photos/seed/clinic3a/600/400',
-          'https://picsum.photos/seed/clinic3b/600/400',
-          'https://picsum.photos/seed/clinic3c/600/400',
-        ],
-      ),
-      Clinic(
-        id: '4',
-        name: 'Heart & Vascular Institute',
-        address: '321 Maple Drive, Eastview',
-        phone: '+1 (555) 345-6789',
-        email: 'care@heartinstitute.com',
-        rating: 4.9,
-        imageUrl: '',
-        description:
-            'A leading cardiology center with expert cardiologists and advanced diagnostic equipment. We provide complete heart care from prevention to treatment.',
-        services: ['5', '1', '10'],
-      ),
-      Clinic(
-        id: '5',
-        name: "Children's Health Center",
-        address: '654 Pine Street, Lakeside',
-        phone: '+1 (555) 456-7890',
-        email: 'kids@childrenshealth.com',
-        rating: 4.6,
-        imageUrl: '',
-        description:
-            'A dedicated pediatric clinic offering specialized care for children from birth through adolescence in a warm and friendly environment.',
-        services: ['6', '3', '1'],
-      ),
-      Clinic(
-        id: '6',
-        name: 'Ortho & Sports Medicine',
-        address: '987 Cedar Lane, Midtown',
-        phone: '+1 (555) 567-8901',
-        email: 'info@orthosports.com',
-        rating: 4.4,
-        imageUrl: '',
-        description:
-            'Expert care for musculoskeletal injuries and sports-related conditions. Our team of orthopedic surgeons and physical therapists help you recover faster.',
-        services: ['7', '4'],
-      ),
-      Clinic(
-        id: '7',
-        name: 'Vision Care Eye Clinic',
-        address: '147 Birch Blvd, Southgate',
-        phone: '+1 (555) 678-9012',
-        email: 'see@visioncare.com',
-        rating: 4.5,
-        imageUrl: '',
-        description:
-            'Comprehensive eye care services including routine exams, contact lens fittings, and treatment for a full range of eye conditions.',
-        services: ['8', '10'],
-      ),
-      Clinic(
-        id: '8',
-        name: 'Skin & Wellness Clinic',
-        address: '258 Willow Way, Hillcrest',
-        phone: '+1 (555) 789-0123',
-        email: 'glow@skinwellness.com',
-        rating: 4.3,
-        imageUrl: '',
-        description:
-            'A specialized dermatology and wellness clinic offering evidence-based treatments for all skin types and conditions with a focus on long-term skin health.',
-        services: ['9', '1'],
-      ),
-    ]);
-  }
-
-  void createBooking({
+  Future<void> createBooking({
     required String clinicId,
     required String serviceId,
     required DateTime dateTime,
     required String customerName,
     required String customerEmail,
     required String customerPhone,
-  }) {
-    final booking = Booking(
-      id: const Uuid().v4(),
-      clinicId: clinicId,
-      serviceId: serviceId,
-      dateTime: dateTime,
-      customerName: customerName,
-      customerEmail: customerEmail,
-      customerPhone: customerPhone,
-      status: BookingStatus.confirmed,
-    );
-    _bookings.add(booking);
-    notifyListeners();
+  }) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final id = const Uuid().v4();
+    await _db.collection('bookings').doc(id).set({
+      'id': id,
+      'clinicId': clinicId,
+      'serviceId': serviceId,
+      'dateTime': Timestamp.fromDate(dateTime),
+      'customerName': customerName,
+      'customerEmail': customerEmail,
+      'customerPhone': customerPhone,
+      'status': 'confirmed',
+      'userId': uid ?? '',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
 
-  void cancelBooking(String bookingId) {
-    _bookings.removeWhere((b) => b.id == bookingId);
-    notifyListeners();
+  Future<void> cancelBooking(String bookingId) async {
+    await _db.collection('bookings').doc(bookingId).update({
+      'status': 'cancelled',
+    });
   }
+
+  // ── Clinics ───────────────────────────────────────────────────────────────
+
+  Future<void> updateClinic(
+    String clinicId, {
+    String? name,
+    String? address,
+    String? phone,
+    String? email,
+    String? description,
+    String? imageUrl,
+    List<String>? photos,
+  }) async {
+    final data = <String, dynamic>{};
+    if (name != null) data['name'] = name;
+    if (address != null) data['address'] = address;
+    if (phone != null) data['phone'] = phone;
+    if (email != null) data['email'] = email;
+    if (description != null) data['description'] = description;
+    if (imageUrl != null) data['imageUrl'] = imageUrl;
+    if (photos != null) data['photos'] = photos;
+    if (data.isEmpty) return;
+    await _db.collection('clinics').doc(clinicId).update(data);
+  }
+
+  Future<void> addClinicPhoto(String clinicId, String localPath) async {
+    final file = File(localPath);
+    final ext = localPath.split('.').last;
+    final ref = _storage.ref('clinics/$clinicId/${const Uuid().v4()}.$ext');
+    await ref.putFile(file);
+    final url = await ref.getDownloadURL();
+
+    final clinic = getClinicById(clinicId);
+    final updated = [...(clinic?.photos ?? []), url];
+    await _db.collection('clinics').doc(clinicId).update({'photos': updated});
+  }
+
+  Future<void> removeClinicPhoto(String clinicId, String photoUrl) async {
+    final clinic = getClinicById(clinicId);
+    if (clinic == null) return;
+    final updated = clinic.photos.where((p) => p != photoUrl).toList();
+    await _db.collection('clinics').doc(clinicId).update({'photos': updated});
+    if (photoUrl.startsWith('https://firebasestorage')) {
+      try {
+        await _storage.refFromURL(photoUrl).delete();
+      } catch (_) {}
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   Clinic? getClinicById(String id) {
     try {
@@ -261,78 +169,54 @@ class BookingProvider extends ChangeNotifier {
   List<Service> getClinicServices(String clinicId) {
     final clinic = getClinicById(clinicId);
     if (clinic == null) return [];
-    return _services
-        .where((s) => clinic.services.contains(s.id))
-        .toList();
+    return _services.where((s) => clinic.services.contains(s.id)).toList();
   }
 
-  void updateClinic(
-    String clinicId, {
-    String? name,
-    String? address,
-    String? phone,
-    String? email,
-    String? description,
-    String? imageUrl,
-    List<String>? photos,
-  }) {
-    final index = _clinics.indexWhere((c) => c.id == clinicId);
-    if (index != -1) {
-      final old = _clinics[index];
-      _clinics[index] = Clinic(
-        id: old.id,
-        name: name ?? old.name,
-        address: address ?? old.address,
-        phone: phone ?? old.phone,
-        email: email ?? old.email,
-        rating: old.rating,
-        imageUrl: imageUrl ?? old.imageUrl,
-        description: description ?? old.description,
-        services: old.services,
-        photos: photos ?? old.photos,
-      );
-      notifyListeners();
-    }
-  }
+  // ── Seed initial data (run once) ──────────────────────────────────────────
 
-  void addClinicPhoto(String clinicId, String photoPath) {
-    final index = _clinics.indexWhere((c) => c.id == clinicId);
-    if (index != -1) {
-      final old = _clinics[index];
-      _clinics[index] = Clinic(
-        id: old.id,
-        name: old.name,
-        address: old.address,
-        phone: old.phone,
-        email: old.email,
-        rating: old.rating,
-        imageUrl: old.imageUrl,
-        description: old.description,
-        services: old.services,
-        photos: [...old.photos, photoPath],
-      );
-      notifyListeners();
-    }
-  }
+  Future<void> seedInitialData() async {
+    final existing = await _db.collection('clinics').limit(1).get();
+    if (existing.docs.isNotEmpty) return;
 
-  void removeClinicPhoto(String clinicId, String photoPath) {
-    final index = _clinics.indexWhere((c) => c.id == clinicId);
-    if (index != -1) {
-      final old = _clinics[index];
-      _clinics[index] = Clinic(
-        id: old.id,
-        name: old.name,
-        address: old.address,
-        phone: old.phone,
-        email: old.email,
-        rating: old.rating,
-        imageUrl: old.imageUrl,
-        description: old.description,
-        services: old.services,
-        photos: old.photos.where((p) => p != photoPath).toList(),
-      );
-      notifyListeners();
+    final batch = _db.batch();
+
+    final serviceIds = List.generate(10, (i) => '${i + 1}');
+    final serviceData = [
+      {'name': 'Ерөнхий үзлэг', 'description': 'Ерөнхий эрүүл мэндийн үзлэг', 'duration': 30, 'price': 50000.0},
+      {'name': 'Шүдний үзлэг', 'description': 'Шүдний бүрэн үзлэг', 'duration': 45, 'price': 80000.0},
+      {'name': 'Вакцин', 'description': 'Дархлааны үйлчилгээ', 'duration': 15, 'price': 25000.0},
+      {'name': 'Физик эмчилгээ', 'description': 'Сэргээн засах эмчилгээ', 'duration': 60, 'price': 120000.0},
+      {'name': 'Зүрхний үзлэг', 'description': 'Зүрхний эрүүл мэндийн үнэлгээ', 'duration': 45, 'price': 150000.0},
+      {'name': 'Хүүхдийн үзлэг', 'description': 'Хүүхдийн өсөлтийн хяналт', 'duration': 30, 'price': 60000.0},
+      {'name': 'Яс үений үзлэг', 'description': 'Яс, үе мөч, булчингийн үнэлгээ', 'duration': 40, 'price': 100000.0},
+      {'name': 'Нүдний үзлэг', 'description': 'Нүдний бүрэн үзлэг', 'duration': 30, 'price': 70000.0},
+      {'name': 'Арьс судлал', 'description': 'Арьсны үзлэг, эмчилгээ', 'duration': 30, 'price': 90000.0},
+      {'name': 'Цусны шинжилгээ', 'description': 'Цогц цусны шинжилгээ', 'duration': 20, 'price': 45000.0},
+    ];
+
+    for (int i = 0; i < serviceData.length; i++) {
+      final ref = _db.collection('services').doc(serviceIds[i]);
+      batch.set(ref, {'id': serviceIds[i], ...serviceData[i]});
     }
+
+    final clinicData = [
+      {'name': 'City Medical Center', 'address': 'Сүхбаатар дүүрэг, 1-р хороо', 'phone': '+976 7700 1111', 'email': 'info@citymedical.mn', 'rating': 4.5, 'description': 'Өндөр чанарын эрүүл мэндийн үйлчилгээ үзүүлдэг цогц эмнэлэг.', 'services': ['1', '2', '3'], 'photos': ['https://picsum.photos/seed/clinic1a/600/400']},
+      {'name': 'Family Health Clinic', 'address': 'Баянзүрх дүүрэг, 3-р хороо', 'phone': '+976 7700 2222', 'email': 'info@familyhealth.mn', 'rating': 4.8, 'description': 'Гэр бүлийн итгэмжлэгдсэн эмнэлэг.', 'services': ['1', '4', '6'], 'photos': ['https://picsum.photos/seed/clinic2a/600/400']},
+      {'name': 'Bright Smile Dental', 'address': 'Чингэлтэй дүүрэг, 2-р хороо', 'phone': '+976 7700 3333', 'email': 'info@brightsmile.mn', 'rating': 4.7, 'description': 'Орчин үеийн шүдний эмнэлэг.', 'services': ['2', '10'], 'photos': ['https://picsum.photos/seed/clinic3a/600/400']},
+      {'name': 'Heart & Vascular Institute', 'address': 'Хан-Уул дүүрэг, 5-р хороо', 'phone': '+976 7700 4444', 'email': 'info@heartinstitute.mn', 'rating': 4.9, 'description': 'Зүрх судасны тэргүүлэх төв.', 'services': ['5', '1', '10'], 'photos': []},
+      {"name": "Children's Health Center", 'address': 'Налайх дүүрэг', 'phone': '+976 7700 5555', 'email': 'info@childrens.mn', 'rating': 4.6, 'description': 'Хүүхдийн мэргэшсэн эмнэлэг.', 'services': ['6', '3', '1'], 'photos': []},
+      {'name': 'Ortho & Sports Medicine', 'address': 'Сонгинохайрхан дүүрэг', 'phone': '+976 7700 6666', 'email': 'info@orthosports.mn', 'rating': 4.4, 'description': 'Яс үе мөчний болон спортын эмнэлэг.', 'services': ['7', '4'], 'photos': []},
+      {'name': 'Vision Care Eye Clinic', 'address': 'Баянгол дүүрэг, 4-р хороо', 'phone': '+976 7700 7777', 'email': 'info@visioncare.mn', 'rating': 4.5, 'description': 'Нүдний иж бүрэн эмнэлэг.', 'services': ['8', '10'], 'photos': []},
+      {'name': 'Skin & Wellness Clinic', 'address': 'Сүхбаатар дүүрэг, 8-р хороо', 'phone': '+976 7700 8888', 'email': 'info@skinwellness.mn', 'rating': 4.3, 'description': 'Арьс судлал ба сайн мэдрэмжийн клиник.', 'services': ['9', '1'], 'photos': []},
+    ];
+
+    for (int i = 0; i < clinicData.length; i++) {
+      final id = '${i + 1}';
+      final ref = _db.collection('clinics').doc(id);
+      batch.set(ref, {'id': id, 'imageUrl': '', ...clinicData[i]});
+    }
+
+    await batch.commit();
   }
 }
 
@@ -358,6 +242,29 @@ class Booking {
     required this.customerPhone,
     required this.status,
   });
+
+  factory Booking.fromFirestore(DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    return Booking(
+      id: d['id'] ?? doc.id,
+      clinicId: d['clinicId'] ?? '',
+      serviceId: d['serviceId'] ?? '',
+      dateTime: (d['dateTime'] as Timestamp).toDate(),
+      customerName: d['customerName'] ?? '',
+      customerEmail: d['customerEmail'] ?? '',
+      customerPhone: d['customerPhone'] ?? '',
+      status: _statusFromString(d['status']),
+    );
+  }
+
+  static BookingStatus _statusFromString(String? s) {
+    switch (s) {
+      case 'confirmed': return BookingStatus.confirmed;
+      case 'cancelled': return BookingStatus.cancelled;
+      case 'completed': return BookingStatus.completed;
+      default: return BookingStatus.pending;
+    }
+  }
 }
 
 enum BookingStatus { pending, confirmed, cancelled, completed }
@@ -386,6 +293,22 @@ class Clinic {
     required this.services,
     this.photos = const [],
   });
+
+  factory Clinic.fromFirestore(DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    return Clinic(
+      id: d['id'] ?? doc.id,
+      name: d['name'] ?? '',
+      address: d['address'] ?? '',
+      phone: d['phone'] ?? '',
+      email: d['email'] ?? '',
+      rating: (d['rating'] as num?)?.toDouble() ?? 0.0,
+      imageUrl: d['imageUrl'] ?? '',
+      description: d['description'] ?? '',
+      services: List<String>.from(d['services'] ?? []),
+      photos: List<String>.from(d['photos'] ?? []),
+    );
+  }
 }
 
 class Service {
@@ -402,4 +325,15 @@ class Service {
     required this.duration,
     required this.price,
   });
+
+  factory Service.fromFirestore(DocumentSnapshot doc) {
+    final d = doc.data() as Map<String, dynamic>;
+    return Service(
+      id: d['id'] ?? doc.id,
+      name: d['name'] ?? '',
+      description: d['description'] ?? '',
+      duration: (d['duration'] as num?)?.toInt() ?? 30,
+      price: (d['price'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 }

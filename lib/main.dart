@@ -2,21 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 
+import 'firebase_options.dart';
 import 'router/app_router.dart';
 import 'providers/booking_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/auth_provider.dart';
 import 'theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   SharedPreferences.setPrefix('clinic_connect_');
-  
+
+  final bookingProvider = BookingProvider();
+  await bookingProvider.seedInitialData();
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider<BookingProvider>(create: (_) => bookingProvider),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: const ClinicConnectApp(),

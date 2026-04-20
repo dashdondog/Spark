@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "209065184666",
+    "project_id": "spark-2da22",
+    "storage_bucket": "spark-2da22.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:209065184666:android:4f365f23ee056cc244be23",
+        "android_client_info": {
+          "package_name": "com.example.clinic_connect_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAp6p3NAY6HFc2Txabjyq10nVY7eU-1tgA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
