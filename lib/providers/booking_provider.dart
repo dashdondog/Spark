@@ -10,8 +10,19 @@ class BookingProvider extends ChangeNotifier {
   List<Clinic> get clinics => List.unmodifiable(_clinics);
   List<Service> get services => List.unmodifiable(_services);
 
+  bool _isRefreshing = false;
+  bool get isRefreshing => _isRefreshing;
+
   BookingProvider() {
     _initializeMockData();
+  }
+
+  Future<void> refresh() async {
+    _isRefreshing = true;
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 800));
+    _isRefreshing = false;
+    notifyListeners();
   }
 
   void _initializeMockData() {

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'router/app_router.dart';
 import 'providers/booking_provider.dart';
+import 'providers/profile_provider.dart';
 import 'theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
 
@@ -16,6 +17,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: const ClinicConnectApp(),
     ),

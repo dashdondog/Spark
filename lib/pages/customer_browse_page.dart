@@ -108,7 +108,10 @@ class _HomeTabState extends State<_HomeTab> {
     final searching = _searchQuery.isNotEmpty;
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        color: AppTheme.primary,
+        onRefresh: () => context.read<BookingProvider>().refresh(),
+        child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(child: _buildHeader()),
           SliverToBoxAdapter(child: _buildSearchBar()),
@@ -141,6 +144,7 @@ class _HomeTabState extends State<_HomeTab> {
           _buildClinicList(),
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
+      ),
       ),
     );
   }
@@ -181,6 +185,31 @@ class _HomeTabState extends State<_HomeTab> {
               ],
             ),
           ),
+          // Refresh button
+          Consumer<BookingProvider>(
+            builder: (context, provider, _) => GestureDetector(
+              onTap: provider.isRefreshing ? null : () => provider.refresh(),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: provider.isRefreshing
+                    ? const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTheme.primary,
+                        ),
+                      )
+                    : const Icon(Icons.refresh_rounded,
+                        color: AppTheme.primary, size: 22),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
           // Notification bell
           GestureDetector(
             onTap: () {},
@@ -429,7 +458,7 @@ class _HomeTabState extends State<_HomeTab> {
             itemBuilder: (context, index) {
               final clinic = clinics[index];
               return GestureDetector(
-                onTap: () => context.go('/clinic/${clinic.id}'),
+                onTap: () => context.push('/clinic/${clinic.id}'),
                 child: Container(
                   width: 148,
                   decoration: BoxDecoration(
@@ -555,7 +584,7 @@ class _HomeTabState extends State<_HomeTab> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: _ClinicListCard(
                 clinic: clinics[index],
-                onTap: () => context.go('/clinic/${clinics[index].id}'),
+                onTap: () => context.push('/clinic/${clinics[index].id}'),
               ),
             ),
             childCount: clinics.length,
@@ -596,7 +625,7 @@ class _AllClinicsPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _ClinicListCard(
                   clinic: clinic,
-                  onTap: () => context.go('/clinic/${clinic.id}'),
+                  onTap: () => context.push('/clinic/${clinic.id}'),
                 ),
               );
             },
@@ -1182,7 +1211,9 @@ class _ProfileTab extends StatelessWidget {
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  context.go('/');
+                  Future.microtask(() {
+                    if (context.mounted) context.go('/');
+                  });
                 },
                 child: const Text('Гарах', style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.w700)),
               ),

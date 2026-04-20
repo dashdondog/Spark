@@ -254,13 +254,21 @@ class _SliverPhotoHeaderState extends State<_SliverPhotoHeader> {
                         ? context.pop()
                         : context.go('/customer'),
                     child: Container(
-                      width: 38, height: 38,
+                      width: 42,
+                      height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.35),
+                        color: Colors.white,
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      child: const Icon(Icons.arrow_back_rounded,
-                          color: Colors.white, size: 20),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded,
+                          color: AppTheme.textDark, size: 18),
                     ),
                   ),
                   // Add photo + favourite

@@ -6,6 +6,7 @@ import '../pages/booking_page.dart';
 import '../pages/company_dashboard_page.dart';
 import '../pages/not_found_page.dart';
 import '../pages/clinic_management_page.dart';
+import '../pages/company_profile_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -39,6 +40,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/company',
       builder: (context, state) => const CompanyDashboardPage(),
+      routes: [
+        GoRoute(
+          path: 'profile',
+          builder: (context, state) => const CompanyProfilePage(),
+        ),
+      ],
     ),
     GoRoute(
       path: '/clinic/:id/manage',

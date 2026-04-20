@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/booking_provider.dart';
-import '../l10n/app_localizations.dart';
+import '../providers/profile_provider.dart';
+import '../theme/app_theme.dart';
 
 class CompanyDashboardPage extends StatelessWidget {
   const CompanyDashboardPage({super.key});
@@ -10,93 +11,369 @@ class CompanyDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(AppLocalizations.of(context).companyDashboard),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Тохиргоо тун удахгүй')),
-              );
-            },
-          ),
-        ],
-      ),
+      backgroundColor: AppTheme.background,
       body: Consumer<BookingProvider>(
-        builder: (context, provider, child) {
+        builder: (context, provider, _) {
           final clinics = provider.clinics;
           final bookings = provider.bookings;
+          final todayBookings = _getTodayBookings(bookings);
+          final pendingBookings =
+              bookings.where((b) => b.status == BookingStatus.pending).toList();
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatsCards(context, clinics, bookings),
-                const SizedBox(height: 24),
-                _buildRecentBookings(context, bookings),
-                const SizedBox(height: 24),
-                _buildClinicsSection(context, clinics),
-              ],
-            ),
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: _buildHeader(context, todayBookings.length),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildQuickActions(context),
+                    const SizedBox(height: 22),
+                    _buildStatsRow(context, clinics, bookings, todayBookings),
+                    const SizedBox(height: 24),
+                    _buildTodaySchedule(context, todayBookings, provider),
+                    const SizedBox(height: 24),
+                    if (pendingBookings.isNotEmpty) ...[
+                      _buildPendingSection(context, pendingBookings, provider),
+                      const SizedBox(height: 24),
+                    ],
+                    _buildClinicsSection(context, clinics),
+                    const SizedBox(height: 24),
+                    _buildLogoutButton(context),
+                    const SizedBox(height: 12),
+                  ]),
+                ),
+              ),
+            ],
           );
         },
       ),
     );
   }
 
-  Widget _buildStatsCards(
+  // ── Header ─────────────────────────────────────────────────────────────
+  Widget _buildHeader(BuildContext context, int todayCount) {
+    final hour = DateTime.now().hour;
+    String greeting;
+    if (hour < 12) {
+      greeting = 'Өглөөний мэнд';
+    } else if (hour < 18) {
+      greeting = 'Өдрийн мэнд';
+    } else {
+      greeting = 'Оройн мэнд';
+    }
+
+    return Container(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 20,
+        left: 16,
+        right: 16,
+        bottom: 28,
+      ),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primary, AppTheme.primaryDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () => context.push('/company/profile'),
+                child: Consumer<ProfileProvider>(
+                  builder: (context, profile, _) => Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        profile.initial,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Consumer<ProfileProvider>(
+                  builder: (context, profile, _) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$greeting 👋',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        profile.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              _roundIcon(
+                Icons.notifications_outlined,
+                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Мэдэгдэл байхгүй')),
+                ),
+                badge: true,
+              ),
+              const SizedBox(width: 8),
+              _roundIcon(
+                Icons.settings_outlined,
+                onTap: () => context.push('/company/profile'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.calendar_today_rounded,
+                    color: AppTheme.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Өнөөдөр',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$todayCount захиалга төлөвлөгдсөн',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _roundIcon(IconData icon,
+      {required VoidCallback onTap, bool badge = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            if (badge)
+              Positioned(
+                top: 10,
+                right: 10,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFF5252),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Quick Actions ──────────────────────────────────────────────────────
+  Widget _buildQuickActions(BuildContext context) {
+    final actions = [
+      (Icons.add_circle_outline, 'Шинэ\nзахиалга', AppTheme.primary, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Удахгүй нэмэгдэнэ')),
+        );
+      }),
+      (Icons.medical_services_outlined, 'Үйлчилгээ', AppTheme.accent, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Удахгүй нэмэгдэнэ')),
+        );
+      }),
+      (Icons.bar_chart_rounded, 'Тайлан', AppTheme.warning, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Удахгүй нэмэгдэнэ')),
+        );
+      }),
+      (Icons.people_outline_rounded, 'Үйлчлүүлэгч', AppTheme.success, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Удахгүй нэмэгдэнэ')),
+        );
+      }),
+    ];
+
+    return Row(
+      children: actions.map((a) {
+        return Expanded(
+          child: GestureDetector(
+            onTap: a.$4,
+            child: Column(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: a.$3.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(a.$1, color: a.$3, size: 24),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  a.$2,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ── Stats Row ──────────────────────────────────────────────────────────
+  Widget _buildStatsRow(
     BuildContext context,
     List<Clinic> clinics,
     List<Booking> bookings,
+    List<Booking> todayBookings,
   ) {
+    final confirmed =
+        bookings.where((b) => b.status == BookingStatus.confirmed).length;
+    final pending =
+        bookings.where((b) => b.status == BookingStatus.pending).length;
+    final revenue = bookings
+        .where((b) => b.status == BookingStatus.confirmed)
+        .length
+        .toDouble() *
+        50.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Ерөнхий',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+        const Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: Text(
+            'Тоймчилсон',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textDark,
+            ),
+          ),
         ),
-        const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
+        Row(
           children: [
-            _buildStatCard(
-              context,
-              title: 'Клиникүүд',
-              value: clinics.length.toString(),
-              icon: Icons.local_hospital,
-              color: Colors.blue,
+            Expanded(
+              child: _miniStat(
+                icon: Icons.pending_actions_rounded,
+                label: 'Хүлээгдэж',
+                value: pending.toString(),
+                color: AppTheme.warning,
+              ),
             ),
-            _buildStatCard(
-              context,
-              title: 'Нийт захиалга',
-              value: bookings.length.toString(),
-              icon: Icons.calendar_today,
-              color: Colors.green,
+            const SizedBox(width: 10),
+            Expanded(
+              child: _miniStat(
+                icon: Icons.check_circle_outline_rounded,
+                label: 'Баталгаажсан',
+                value: confirmed.toString(),
+                color: AppTheme.success,
+              ),
             ),
-            _buildStatCard(
-              context,
-              title: 'Өнөөдрийн захиалга',
-              value: _getTodayBookings(bookings).length.toString(),
-              icon: Icons.today,
-              color: Colors.orange,
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _miniStat(
+                icon: Icons.local_hospital_rounded,
+                label: 'Клиник',
+                value: clinics.length.toString(),
+                color: AppTheme.primary,
+              ),
             ),
-            _buildStatCard(
-              context,
-              title: 'Орлого',
-              value: '\$${_getTotalRevenue(bookings).toStringAsFixed(2)}',
-              icon: Icons.attach_money,
-              color: Colors.purple,
+            const SizedBox(width: 10),
+            Expanded(
+              child: _miniStat(
+                icon: Icons.payments_outlined,
+                label: 'Орлого',
+                value: '\$${revenue.toStringAsFixed(0)}',
+                color: const Color(0xFF7C4DFF),
+              ),
             ),
           ],
         ),
@@ -104,360 +381,509 @@ class CompanyDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(
-    BuildContext context, {
-    required String title,
-    required String value,
+  Widget _miniStat({
     required IconData icon,
+    required String label,
+    required String value,
     required Color color,
   }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 24, color: color),
-            const Spacer(),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.7),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textDark,
                   ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textLight,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildRecentBookings(BuildContext context, List<Booking> bookings) {
-    final recentBookings = bookings
-        .where((b) => b.status == BookingStatus.confirmed)
-        .toList()
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+  // ── Today's Schedule ───────────────────────────────────────────────────
+  Widget _buildTodaySchedule(
+    BuildContext context,
+    List<Booking> bookings,
+    BookingProvider provider,
+  ) {
+    final sorted = [...bookings]
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Сүүлийн захиалгууд',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            TextButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Тун удахгүй')),
-                );
-              },
-              child: const Text('Бүгдийг харах'),
-            ),
-          ],
+        _sectionHeader(
+          'Өнөөдрийн хуваарь',
+          onSeeAll: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Удахгүй нэмэгдэнэ')),
+            );
+          },
         ),
-        const SizedBox(height: 16),
-        if (recentBookings.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: 0.2),
-              ),
-            ),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.calendar_today,
-                    size: 48,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.3),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Захиалга байхгүй',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.5),
-                        ),
-                  ),
-                ],
-              ),
-            ),
+        const SizedBox(height: 12),
+        if (sorted.isEmpty)
+          _emptyBox(
+            icon: Icons.event_available_rounded,
+            message: 'Өнөөдөр захиалга алга',
           )
         else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: recentBookings.take(5).length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) =>
-                _buildBookingCard(context, recentBookings[index]),
+          Column(
+            children: sorted
+                .take(4)
+                .map((b) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _scheduleItem(b, provider),
+                    ))
+                .toList(),
           ),
       ],
     );
   }
 
-  Widget _buildBookingCard(BuildContext context, Booking booking) {
-    final provider = context.read<BookingProvider>();
-    final clinic = provider.getClinicById(booking.clinicId);
-    final service = provider.getServiceById(booking.serviceId);
+  Widget _scheduleItem(Booking b, BookingProvider provider) {
+    final clinic = provider.getClinicById(b.clinicId);
+    final service = provider.getServiceById(b.serviceId);
+    final color = _statusColor(b.status);
+    final timeStr =
+        '${b.dateTime.hour.toString().padLeft(2, '0')}:${b.dateTime.minute.toString().padLeft(2, '0')}';
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0A000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                timeStr,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textDark,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            width: 1,
+            height: 48,
+            margin: const EdgeInsets.symmetric(horizontal: 14),
+            color: AppTheme.divider,
+          ),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        clinic?.name ?? 'Тодорхойгүй клиник',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        service?.name ?? 'Тодорхойгүй үйлчилгээ',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.7),
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _statusColor(booking.status).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _statusLabel(booking.status),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: _statusColor(booking.status),
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.person,
-                  size: 16,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
-                const SizedBox(width: 4),
-                Text(booking.customerName,
-                    style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 16,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
-                const SizedBox(width: 4),
                 Text(
-                  '${booking.dateTime.day}/${booking.dateTime.month}/${booking.dateTime.year}  ${booking.dateTime.hour.toString().padLeft(2, '0')}:${booking.dateTime.minute.toString().padLeft(2, '0')}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  b.customerName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textDark,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${service?.name ?? '—'} · ${clinic?.name ?? '—'}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textLight,
+                  ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _statusLabel(b.status),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
+  // ── Pending Section ────────────────────────────────────────────────────
+  Widget _buildPendingSection(
+    BuildContext context,
+    List<Booking> pending,
+    BookingProvider provider,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Баталгаажуулах',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textDark,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.warning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                pending.length.toString(),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.warning,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Column(
+          children: pending
+              .take(3)
+              .map((b) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _pendingCard(context, b, provider),
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _pendingCard(
+      BuildContext context, Booking b, BookingProvider provider) {
+    final service = provider.getServiceById(b.serviceId);
+    final dateStr =
+        '${b.dateTime.day}/${b.dateTime.month} · ${b.dateTime.hour.toString().padLeft(2, '0')}:${b.dateTime.minute.toString().padLeft(2, '0')}';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.warning.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppTheme.primaryLight,
+                child: Text(
+                  b.customerName.isNotEmpty ? b.customerName[0] : '?',
+                  style: const TextStyle(
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      b.customerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textDark,
+                      ),
+                    ),
+                    Text(
+                      '${service?.name ?? '—'} · $dateStr',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textLight,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Цуцлагдлаа')),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.error,
+                    side: BorderSide(
+                        color: AppTheme.error.withValues(alpha: 0.3)),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Татгалзах',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Баталгаажлаа')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.success,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Баталгаажуулах',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Clinics Section ────────────────────────────────────────────────────
   Widget _buildClinicsSection(BuildContext context, List<Clinic> clinics) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Таны клиникүүд',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+            const Expanded(
+              child: Text(
+                'Миний клиникүүд',
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textDark,
+                ),
+              ),
             ),
-            ElevatedButton.icon(
-              onPressed: () {
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Тун удахгүй')),
+                  const SnackBar(content: Text('Удахгүй нэмэгдэнэ')),
                 );
               },
-              icon: const Icon(Icons.add),
-              label: const Text('Клиник нэмэх'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add_rounded,
+                        size: 16, color: AppTheme.primary),
+                    SizedBox(width: 4),
+                    Text(
+                      'Нэмэх',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         if (clinics.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: 0.2),
-              ),
-            ),
-            child: Center(
-              child: Column(
-                children: [
-                  Icon(
-                    Icons.local_hospital,
-                    size: 48,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.3),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Клиник нэмэгдээгүй байна',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onSurface
-                              .withValues(alpha: 0.5),
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Тун удахгүй')),
-                      );
-                    },
-                    child: const Text('Анхны клиникаа нэмэх'),
-                  ),
-                ],
-              ),
-            ),
+          _emptyBox(
+            icon: Icons.local_hospital_outlined,
+            message: 'Клиник нэмэгдээгүй байна',
           )
         else
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: clinics.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) =>
-                _buildClinicCard(context, clinics[index]),
+          Column(
+            children: clinics
+                .map((c) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _clinicTile(context, c),
+                    ))
+                .toList(),
           ),
       ],
     );
   }
 
-  Widget _buildClinicCard(BuildContext context, Clinic clinic) {
-    return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context)
-              .colorScheme
-              .primary
-              .withValues(alpha: 0.1),
-          child: Icon(
-            Icons.local_hospital,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        title: Text(
-          clinic.name,
-          style: Theme.of(context)
-              .textTheme
-              .titleMedium
-              ?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(clinic.address,
-                style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 2),
-            Text(clinic.phone,
-                style: Theme.of(context).textTheme.bodySmall),
+  Widget _clinicTile(BuildContext context, Clinic clinic) {
+    return GestureDetector(
+      onTap: () => context.push('/clinic/${clinic.id}/manage'),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 10,
+              offset: Offset(0, 3),
+            ),
           ],
         ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'edit') {
-              context.go('/clinic/${clinic.id}/manage');
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Тун удахгүй')),
-              );
-            }
-          },
-          itemBuilder: (_) => [
-            const PopupMenuItem(
-              value: 'edit',
-              child: Row(children: [
-                Icon(Icons.edit),
-                SizedBox(width: 8),
-                Text('Засах'),
-              ]),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.local_hospital_rounded,
+                  color: AppTheme.primary, size: 22),
             ),
-            const PopupMenuItem(
-              value: 'view',
-              child: Row(children: [
-                Icon(Icons.visibility),
-                SizedBox(width: 8),
-                Text('Дэлгэрэнгүй'),
-              ]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    clinic.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined,
+                          size: 12, color: AppTheme.textLight),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          clinic.address,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 11, color: AppTheme.textLight),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.chevron_right_rounded,
+                  color: AppTheme.primary, size: 18),
             ),
           ],
         ),
@@ -465,43 +891,153 @@ class CompanyDashboardPage extends StatelessWidget {
     );
   }
 
-  List<Booking> _getTodayBookings(List<Booking> bookings) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return bookings.where((b) {
-      final d = DateTime(b.dateTime.year, b.dateTime.month, b.dateTime.day);
-      return d.isAtSameMomentAs(today);
-    }).toList();
+  // ── Shared helpers ─────────────────────────────────────────────────────
+  Widget _sectionHeader(String title, {required VoidCallback onSeeAll}) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textDark,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: onSeeAll,
+          child: const Text(
+            'Бүгдийг',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
-  double _getTotalRevenue(List<Booking> bookings) {
-    return bookings
-        .where((b) => b.status == BookingStatus.confirmed)
-        .length
-        .toDouble() * 50.0;
+  Widget _emptyBox({required IconData icon, required String message}) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(icon, size: 40, color: AppTheme.textLight),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppTheme.textLight,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20)),
+            title: const Text('Гарах уу?',
+                style: TextStyle(fontWeight: FontWeight.w800)),
+            content: const Text('Та системээс гарахдаа итгэлтэй байна уу?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Үгүй',
+                    style: TextStyle(color: AppTheme.textMedium)),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Future.microtask(() {
+                    if (context.mounted) context.go('/');
+                  });
+                },
+                child: const Text('Гарах',
+                    style: TextStyle(
+                        color: AppTheme.error, fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: AppTheme.error.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.error.withValues(alpha: 0.2)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.logout_rounded, color: AppTheme.error, size: 18),
+            SizedBox(width: 8),
+            Text(
+              'Гарах',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.error,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+  List<Booking> _getTodayBookings(List<Booking> bookings) {
+    final now = DateTime.now();
+    return bookings.where((b) {
+      return b.dateTime.year == now.year &&
+          b.dateTime.month == now.month &&
+          b.dateTime.day == now.day;
+    }).toList();
   }
 
   Color _statusColor(BookingStatus status) {
     switch (status) {
       case BookingStatus.confirmed:
-        return Colors.green;
+        return AppTheme.success;
       case BookingStatus.pending:
-        return Colors.orange;
+        return AppTheme.warning;
       case BookingStatus.cancelled:
-        return Colors.red;
+        return AppTheme.error;
       case BookingStatus.completed:
-        return Colors.blue;
+        return AppTheme.textLight;
     }
   }
 
   String _statusLabel(BookingStatus status) {
     switch (status) {
       case BookingStatus.confirmed:
-        return 'Баталгаажсан';
+        return 'Баталсан';
       case BookingStatus.pending:
-        return 'Хүлээгдэж буй';
+        return 'Хүлээгдэж';
       case BookingStatus.cancelled:
-        return 'Цуцлагдсан';
+        return 'Цуцалсан';
       case BookingStatus.completed:
         return 'Дууссан';
     }
