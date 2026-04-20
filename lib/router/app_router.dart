@@ -7,6 +7,8 @@ import '../pages/company_dashboard_page.dart';
 import '../pages/not_found_page.dart';
 import '../pages/clinic_management_page.dart';
 import '../pages/company_profile_page.dart';
+import '../pages/customer_register_page.dart';
+import '../pages/clinic_register_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
@@ -18,6 +20,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/customer',
       builder: (context, state) => const CustomerBrowsePage(),
+    ),
+    GoRoute(
+      path: '/register/customer',
+      builder: (context, state) => const CustomerRegisterPage(),
+    ),
+    GoRoute(
+      path: '/register/clinic',
+      builder: (context, state) => const ClinicRegisterPage(),
     ),
     GoRoute(
       path: '/clinic/:id',
