@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:geolocator/geolocator.dart';
 import '../providers/booking_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -87,10 +88,22 @@ class _HomeTabState extends State<_HomeTab> {
   String _searchQuery = '';
 
   static const List<Map<String, dynamic>> _categories = [
-    {'icon': Icons.local_hospital, 'label': 'Ерөнхий', 'color': Color(0xFF1B75BC)},
-    {'icon': Icons.medical_services, 'label': 'Шүдний', 'color': Color(0xFFFF7043)},
+    {
+      'icon': Icons.local_hospital,
+      'label': 'Ерөнхий',
+      'color': Color(0xFF1B75BC),
+    },
+    {
+      'icon': Icons.medical_services,
+      'label': 'Шүдний',
+      'color': Color(0xFFFF7043),
+    },
     {'icon': Icons.favorite, 'label': 'Зүрх', 'color': Color(0xFFE91E63)},
-    {'icon': Icons.accessibility_new, 'label': 'Яс', 'color': Color(0xFF4CAF50)},
+    {
+      'icon': Icons.accessibility_new,
+      'label': 'Яс',
+      'color': Color(0xFF4CAF50),
+    },
     {'icon': Icons.child_care, 'label': 'Хүүхэд', 'color': Color(0xFF9C27B0)},
     {'icon': Icons.hearing, 'label': 'ХЧЧ', 'color': Color(0xFF00BFA5)},
     {'icon': Icons.remove_red_eye, 'label': 'Нүд', 'color': Color(0xFF3F51B5)},
@@ -112,39 +125,48 @@ class _HomeTabState extends State<_HomeTab> {
         color: AppTheme.primary,
         onRefresh: () => context.read<BookingProvider>().refresh(),
         child: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(child: _buildHeader()),
-          SliverToBoxAdapter(child: _buildSearchBar()),
-          if (!searching) ...[
-            SliverToBoxAdapter(child: _buildCategories()),
-            SliverToBoxAdapter(child: _buildSectionHeader(
-              'Шилдэг клиникүүд',
-              onSeeAll: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const _AllClinicsPage())),
-            )),
-            SliverToBoxAdapter(child: _buildTopDoctors()),
-            SliverToBoxAdapter(child: _buildSectionHeader(
-              'Ойролцоо клиникүүд',
-              onSeeAll: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const _AllClinicsPage())),
-            )),
-          ] else
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
-                child: Text(
-                  '"$_searchQuery" — хайлтын үр дүн',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textLight,
-                      fontWeight: FontWeight.w500),
+          slivers: [
+            SliverToBoxAdapter(child: _buildHeader()),
+            SliverToBoxAdapter(child: _buildSearchBar()),
+            if (!searching) ...[
+              SliverToBoxAdapter(child: _buildCategories()),
+              SliverToBoxAdapter(
+                child: _buildSectionHeader(
+                  'Шилдэг клиникүүд',
+                  onSeeAll: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const _AllClinicsPage()),
+                  ),
                 ),
               ),
-            ),
-          _buildClinicList(),
-          const SliverToBoxAdapter(child: SizedBox(height: 24)),
-        ],
-      ),
+              SliverToBoxAdapter(child: _buildTopDoctors()),
+              SliverToBoxAdapter(
+                child: _buildSectionHeader(
+                  'Ойролцоо клиникүүд',
+                  onSeeAll: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const _AllClinicsPage()),
+                  ),
+                ),
+              ),
+            ] else
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                  child: Text(
+                    '"$_searchQuery" — хайлтын үр дүн',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textLight,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            _buildClinicList(),
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+          ],
+        ),
       ),
     );
   }
@@ -204,8 +226,11 @@ class _HomeTabState extends State<_HomeTab> {
                           color: AppTheme.primary,
                         ),
                       )
-                    : const Icon(Icons.refresh_rounded,
-                        color: AppTheme.primary, size: 22),
+                    : const Icon(
+                        Icons.refresh_rounded,
+                        color: AppTheme.primary,
+                        size: 22,
+                      ),
               ),
             ),
           ),
@@ -223,8 +248,11 @@ class _HomeTabState extends State<_HomeTab> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  const Icon(Icons.notifications_outlined,
-                      color: AppTheme.primary, size: 22),
+                  const Icon(
+                    Icons.notifications_outlined,
+                    color: AppTheme.primary,
+                    size: 22,
+                  ),
                   Positioned(
                     top: 9,
                     right: 9,
@@ -292,14 +320,18 @@ class _HomeTabState extends State<_HomeTab> {
           style: const TextStyle(fontSize: 14, color: AppTheme.textDark),
           decoration: InputDecoration(
             hintText: 'Эмч, клиник, үйлчилгээ хайх...',
-            hintStyle:
-                const TextStyle(color: AppTheme.textLight, fontSize: 14),
-            prefixIcon:
-                const Icon(Icons.search_rounded, color: AppTheme.textLight),
+            hintStyle: const TextStyle(color: AppTheme.textLight, fontSize: 14),
+            prefixIcon: const Icon(
+              Icons.search_rounded,
+              color: AppTheme.textLight,
+            ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(Icons.close_rounded,
-                        color: AppTheme.textLight, size: 18),
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: AppTheme.textLight,
+                      size: 18,
+                    ),
                     onPressed: () {
                       _searchController.clear();
                       setState(() => _searchQuery = '');
@@ -316,13 +348,14 @@ class _HomeTabState extends State<_HomeTab> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide:
-                  const BorderSide(color: AppTheme.primary, width: 1.5),
+              borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
             ),
             fillColor: Colors.white,
             filled: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
         ),
       ),
@@ -387,14 +420,10 @@ class _HomeTabState extends State<_HomeTab> {
                   width: 58,
                   height: 58,
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha:0.12),
+                    color: color.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    cat['icon'] as IconData,
-                    color: color,
-                    size: 26,
-                  ),
+                  child: Icon(cat['icon'] as IconData, color: color, size: 26),
                 ),
                 const SizedBox(height: 7),
                 Text(
@@ -421,9 +450,14 @@ class _HomeTabState extends State<_HomeTab> {
       return Container(
         color: AppTheme.primary,
         child: Center(
-          child: Text(clinic.name[0],
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+          child: Text(
+            clinic.name[0],
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       );
     }
@@ -436,9 +470,14 @@ class _HomeTabState extends State<_HomeTab> {
       errorWidget: (_, __, ___) => Container(
         color: AppTheme.primary,
         child: Center(
-          child: Text(clinic.name[0],
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+          child: Text(
+            clinic.name[0],
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );
@@ -500,8 +539,11 @@ class _HomeTabState extends State<_HomeTab> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.star_rounded,
-                                      color: AppTheme.star, size: 13),
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    color: AppTheme.star,
+                                    size: 13,
+                                  ),
                                   const SizedBox(width: 3),
                                   Text(
                                     clinic.rating.toStringAsFixed(1),
@@ -516,7 +558,9 @@ class _HomeTabState extends State<_HomeTab> {
                               const SizedBox(height: 6),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 5),
+                                  horizontal: 14,
+                                  vertical: 5,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppTheme.primaryLight,
                                   borderRadius: BorderRadius.circular(20),
@@ -561,15 +605,19 @@ class _HomeTabState extends State<_HomeTab> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.search_off_rounded,
-                        size: 64, color: Colors.grey[300]),
+                    Icon(
+                      Icons.search_off_rounded,
+                      size: 64,
+                      color: Colors.grey[300],
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       'Клиник олдсонгүй',
                       style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600),
+                        color: Colors.grey[500],
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -648,8 +696,11 @@ class _ClinicListCard extends StatelessWidget {
     if (photo == null) {
       return Container(
         color: AppTheme.primaryLight,
-        child: const Icon(Icons.local_hospital_rounded,
-            color: AppTheme.primary, size: 32),
+        child: const Icon(
+          Icons.local_hospital_rounded,
+          color: AppTheme.primary,
+          size: 32,
+        ),
       );
     }
     if (!photo.startsWith('http')) {
@@ -658,12 +709,14 @@ class _ClinicListCard extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: photo,
       fit: BoxFit.cover,
-      placeholder: (_, __) =>
-          Container(color: AppTheme.primaryLight),
+      placeholder: (_, __) => Container(color: AppTheme.primaryLight),
       errorWidget: (_, __, ___) => Container(
         color: AppTheme.primaryLight,
-        child: const Icon(Icons.local_hospital_rounded,
-            color: AppTheme.primary, size: 32),
+        child: const Icon(
+          Icons.local_hospital_rounded,
+          color: AppTheme.primary,
+          size: 32,
+        ),
       ),
     );
   }
@@ -709,14 +762,19 @@ class _ClinicListCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined,
-                          size: 13, color: AppTheme.textLight),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 13,
+                        color: AppTheme.textLight,
+                      ),
                       const SizedBox(width: 3),
                       Expanded(
                         child: Text(
                           clinic.address,
                           style: const TextStyle(
-                              fontSize: 12, color: AppTheme.textLight),
+                            fontSize: 12,
+                            color: AppTheme.textLight,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -728,7 +786,9 @@ class _ClinicListCard extends StatelessWidget {
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFFF8E1),
                           borderRadius: BorderRadius.circular(7),
@@ -736,8 +796,11 @@ class _ClinicListCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star_rounded,
-                                size: 12, color: AppTheme.star),
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 12,
+                              color: AppTheme.star,
+                            ),
                             const SizedBox(width: 3),
                             Text(
                               clinic.rating.toStringAsFixed(1),
@@ -753,7 +816,9 @@ class _ClinicListCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE8F5E9),
                           borderRadius: BorderRadius.circular(7),
@@ -780,8 +845,11 @@ class _ClinicListCard extends StatelessWidget {
                 color: AppTheme.primaryLight,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.chevron_right_rounded,
-                  color: AppTheme.primary, size: 20),
+              child: const Icon(
+                Icons.chevron_right_rounded,
+                color: AppTheme.primary,
+                size: 20,
+              ),
             ),
           ],
         ),
@@ -820,16 +888,20 @@ class _AppointmentsTab extends StatelessWidget {
                       color: AppTheme.primaryLight,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.calendar_today_outlined,
-                        size: 46, color: AppTheme.primary),
+                    child: const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 46,
+                      color: AppTheme.primary,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     'Захиалга байхгүй байна',
                     style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textDark),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textDark,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -894,7 +966,10 @@ class _AppointmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x0C000000), blurRadius: 12, offset: Offset(0, 4)),
+            color: Color(0x0C000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -909,8 +984,11 @@ class _AppointmentCard extends StatelessWidget {
                   color: AppTheme.primaryLight,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.local_hospital_rounded,
-                    color: AppTheme.primary, size: 20),
+                child: const Icon(
+                  Icons.local_hospital_rounded,
+                  color: AppTheme.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -924,10 +1002,12 @@ class _AppointmentCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: statusColors[booking.status]!.withValues(alpha:0.12),
+                  color: statusColors[booking.status]!.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -967,11 +1047,14 @@ class _AppointmentCard extends StatelessWidget {
       children: [
         Icon(icon, size: 14, color: AppTheme.textLight),
         const SizedBox(width: 4),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.textMedium,
-                fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppTheme.textMedium,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -981,10 +1064,14 @@ class _AppointmentCard extends StatelessWidget {
 // MAP TAB
 // ────────────────────────────────────────────────────────────────────────────
 
-class _MessagesTab extends StatelessWidget {
+class _MessagesTab extends StatefulWidget {
   const _MessagesTab();
 
-  // Clinic mock coordinates near Ulaanbaatar
+  @override
+  State<_MessagesTab> createState() => _MessagesTabState();
+}
+
+class _MessagesTabState extends State<_MessagesTab> {
   static const List<(String, LatLng)> _clinicPoints = [
     ('City Medical Center', LatLng(47.9120, 106.8880)),
     ('Family Health Clinic', LatLng(47.9050, 106.8750)),
@@ -996,6 +1083,93 @@ class _MessagesTab extends StatelessWidget {
     ('Skin & Wellness Clinic', LatLng(47.9080, 106.8980)),
   ];
 
+  final _mapController = MapController();
+  LatLng? _userLocation;
+  double? _accuracy;
+  bool _isLoadingLocation = true;
+  bool _isRefreshingLocation = false;
+  String? _locationError;
+
+  @override
+  void initState() {
+    super.initState();
+    _getUserLocation();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _getUserLocation({bool isRefresh = false}) async {
+    if (isRefresh) setState(() => _isRefreshingLocation = true);
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _locationError = 'Байршлын үйлчилгээ идэвхгүй байна';
+          _isLoadingLocation = false;
+          _isRefreshingLocation = false;
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _locationError = 'Байршлын зөвшөөрөл татгалзлаа';
+            _isLoadingLocation = false;
+            _isRefreshingLocation = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _locationError = 'Байршлын зөвшөөрөл бүрмөсөн татгалзлаа';
+          _isLoadingLocation = false;
+          _isRefreshingLocation = false;
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final loc = LatLng(position.latitude, position.longitude);
+      setState(() {
+        _userLocation = loc;
+        _accuracy = position.accuracy;
+        _isLoadingLocation = false;
+        _isRefreshingLocation = false;
+        _locationError = null;
+      });
+
+      if (isRefresh) {
+        _mapController.move(loc, _mapController.camera.zoom);
+      }
+    } catch (e) {
+      setState(() {
+        _locationError = 'Байршил авахад алдаа гарлаа';
+        _isLoadingLocation = false;
+        _isRefreshingLocation = false;
+      });
+    }
+  }
+
+  void _centerOnUser() {
+    if (_userLocation != null) {
+      _mapController.move(_userLocation!, 15);
+    } else {
+      _getUserLocation(isRefresh: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1003,65 +1177,211 @@ class _MessagesTab extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Газрын зураг'),
         automaticallyImplyLeading: false,
-      ),
-      body: FlutterMap(
-        options: const MapOptions(
-          initialCenter: LatLng(47.9077, 106.8832),
-          initialZoom: 13,
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            userAgentPackageName: 'com.example.clinic_connect_flutter',
-          ),
-          MarkerLayer(
-            markers: _clinicPoints
-                .map(
-                  (e) => Marker(
-                    point: e.$2,
-                    width: 160,
-                    height: 60,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primary.withValues(alpha: 0.4),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            e.$1,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(
-                          Icons.location_on_rounded,
-                          color: AppTheme.primary,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
+        actions: [
+          if (_locationError != null)
+            Tooltip(
+              message: _locationError ?? '',
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Icon(Icons.location_off_rounded, color: Colors.orange[700]),
+              ),
+            ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _isRefreshingLocation ? null : _centerOnUser,
+        backgroundColor: Colors.white,
+        elevation: 4,
+        child: _isRefreshingLocation
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: AppTheme.primary,
+                ),
+              )
+            : Icon(
+                _userLocation != null
+                    ? Icons.my_location_rounded
+                    : Icons.location_searching_rounded,
+                color: AppTheme.primary,
+              ),
+      ),
+      body: _isLoadingLocation
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: AppTheme.primary),
+                  SizedBox(height: 16),
+                  Text(
+                    'Байршил тодорхойлж байна...',
+                    style: TextStyle(color: AppTheme.textLight, fontSize: 14),
+                  ),
+                ],
+              ),
+            )
+          : FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: _userLocation ?? const LatLng(47.9077, 106.8832),
+                initialZoom: _userLocation != null ? 15 : 13,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.clinic_connect_flutter',
+                ),
+                // Accuracy radius circle
+                if (_userLocation != null && _accuracy != null)
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: _userLocation!,
+                        radius: _accuracy!,
+                        useRadiusInMeter: true,
+                        color: Colors.blue.withValues(alpha: 0.12),
+                        borderColor: Colors.blue.withValues(alpha: 0.4),
+                        borderStrokeWidth: 1.5,
+                      ),
+                    ],
+                  ),
+                MarkerLayer(
+                  markers: [
+                    // User location marker
+                    if (_userLocation != null)
+                      Marker(
+                        point: _userLocation!,
+                        width: 72,
+                        height: 72,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withValues(alpha: 0.18),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withValues(alpha: 0.5),
+                                    blurRadius: 8,
+                                    spreadRadius: 2,
+                                  ),
+                                ],
+                              ),
+                              child: Container(
+                                margin: const EdgeInsets.all(3),
+                                decoration: const BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    // Clinic markers
+                    ..._clinicPoints.map(
+                      (e) => Marker(
+                        point: e.$2,
+                        width: 160,
+                        height: 60,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withValues(alpha: 0.4),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                e.$1,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const Icon(
+                              Icons.location_on_rounded,
+                              color: AppTheme.primary,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                // "Та энд" label overlay
+                if (_userLocation != null)
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: _userLocation!,
+                        width: 60,
+                        height: 90,
+                        alignment: Alignment.topCenter,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(6),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withValues(alpha: 0.35),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Text(
+                                'Та энд',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
     );
   }
 }
@@ -1085,18 +1405,52 @@ class _ProfileTab extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _menuItem(context, Icons.person_outline_rounded,
-                      'Хувийн мэдээлэл', const Color(0xFF1B75BC),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _ProfileEditPage()))),
-                  _menuItem(context, Icons.calendar_today_outlined,
-                      'Миний захиалгууд', const Color(0xFF00BFA5),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _MyBookingsPage()))),
-                  _menuItem(context, Icons.notifications_outlined,
-                      'Мэдэгдэл', const Color(0xFFFF7043),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _NotificationsPage()))),
-                  _menuItem(context, Icons.help_outline_rounded,
-                      'Тусламж', const Color(0xFF607D8B),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const _HelpPage()))),
+                  _menuItem(
+                    context,
+                    Icons.person_outline_rounded,
+                    'Хувийн мэдээлэл',
+                    const Color(0xFF1B75BC),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const _ProfileEditPage(),
+                      ),
+                    ),
+                  ),
+                  _menuItem(
+                    context,
+                    Icons.calendar_today_outlined,
+                    'Миний захиалгууд',
+                    const Color(0xFF00BFA5),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const _MyBookingsPage(),
+                      ),
+                    ),
+                  ),
+                  _menuItem(
+                    context,
+                    Icons.notifications_outlined,
+                    'Мэдэгдэл',
+                    const Color(0xFFFF7043),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const _NotificationsPage(),
+                      ),
+                    ),
+                  ),
+                  _menuItem(
+                    context,
+                    Icons.help_outline_rounded,
+                    'Тусламж',
+                    const Color(0xFF607D8B),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const _HelpPage()),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   _logoutButton(context),
                 ],
@@ -1127,7 +1481,7 @@ class _ProfileTab extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primary.withValues(alpha:0.3),
+                  color: AppTheme.primary.withValues(alpha: 0.3),
                   blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
@@ -1137,9 +1491,10 @@ class _ProfileTab extends StatelessWidget {
               child: Text(
                 'J',
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -1147,9 +1502,10 @@ class _ProfileTab extends StatelessWidget {
           const Text(
             'John Doe',
             style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.textDark),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.textDark,
+            ),
           ),
           const SizedBox(height: 4),
           const Text(
@@ -1162,12 +1518,18 @@ class _ProfileTab extends StatelessWidget {
             children: [
               _statBadge('12', 'Захиалга'),
               Container(
-                  width: 1, height: 28, color: AppTheme.divider,
-                  margin: const EdgeInsets.symmetric(horizontal: 20)),
+                width: 1,
+                height: 28,
+                color: AppTheme.divider,
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+              ),
               _statBadge('3', 'Удахгүй'),
               Container(
-                  width: 1, height: 28, color: AppTheme.divider,
-                  margin: const EdgeInsets.symmetric(horizontal: 20)),
+                width: 1,
+                height: 28,
+                color: AppTheme.divider,
+                margin: const EdgeInsets.symmetric(horizontal: 20),
+              ),
               _statBadge('5', 'Дуртай'),
             ],
           ),
@@ -1182,9 +1544,10 @@ class _ProfileTab extends StatelessWidget {
         Text(
           value,
           style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-              color: AppTheme.textDark),
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppTheme.textDark,
+          ),
         ),
         Text(
           label,
@@ -1200,13 +1563,21 @@ class _ProfileTab extends StatelessWidget {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Гарах уу?', style: TextStyle(fontWeight: FontWeight.w800)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Гарах уу?',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
             content: const Text('Та системээс гарахдаа итгэлтэй байна уу?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Үгүй', style: TextStyle(color: AppTheme.textMedium)),
+                child: const Text(
+                  'Үгүй',
+                  style: TextStyle(color: AppTheme.textMedium),
+                ),
               ),
               TextButton(
                 onPressed: () {
@@ -1215,7 +1586,13 @@ class _ProfileTab extends StatelessWidget {
                     if (context.mounted) context.go('/');
                   });
                 },
-                child: const Text('Гарах', style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.w700)),
+                child: const Text(
+                  'Гарах',
+                  style: TextStyle(
+                    color: AppTheme.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1262,12 +1639,14 @@ class _ProfileTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
           BoxShadow(
-              color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2)),
+            color: Color(0x08000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
         ],
       ),
       child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
           width: 42,
           height: 42,
@@ -1285,10 +1664,12 @@ class _ProfileTab extends StatelessWidget {
             color: AppTheme.textDark,
           ),
         ),
-        trailing: const Icon(Icons.chevron_right_rounded,
-            color: AppTheme.textLight, size: 20),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: AppTheme.textLight,
+          size: 20,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         onTap: onTap,
       ),
     );
@@ -1332,26 +1713,51 @@ class _ProfileEditPageState extends State<_ProfileEditPage> {
           children: [
             const SizedBox(height: 16),
             Container(
-              width: 90, height: 90,
+              width: 90,
+              height: 90,
               decoration: const BoxDecoration(
-                gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primaryDark]),
+                gradient: LinearGradient(
+                  colors: [AppTheme.primary, AppTheme.primaryDark],
+                ),
                 shape: BoxShape.circle,
               ),
               child: const Center(
-                child: Text('J', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'J',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 28),
-            TextField(controller: _nameCtrl,
-                decoration: const InputDecoration(labelText: 'Нэр', prefixIcon: Icon(Icons.person_outline_rounded))),
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Нэр',
+                prefixIcon: Icon(Icons.person_outline_rounded),
+              ),
+            ),
             const SizedBox(height: 16),
-            TextField(controller: _emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'И-мэйл', prefixIcon: Icon(Icons.email_outlined))),
+            TextField(
+              controller: _emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'И-мэйл',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+            ),
             const SizedBox(height: 16),
-            TextField(controller: _phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Утас', prefixIcon: Icon(Icons.phone_outlined))),
+            TextField(
+              controller: _phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Утас',
+                prefixIcon: Icon(Icons.phone_outlined),
+              ),
+            ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -1359,7 +1765,11 @@ class _ProfileEditPageState extends State<_ProfileEditPage> {
                 onPressed: () {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Мэдээлэл хадгалагдлаа'), backgroundColor: Colors.green));
+                    const SnackBar(
+                      content: Text('Мэдээлэл хадгалагдлаа'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
                 },
                 child: const Text('Хадгалах'),
               ),
@@ -1394,14 +1804,29 @@ class _MyBookingsPage extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircleAvatar(radius: 45, backgroundColor: AppTheme.primaryLight,
-                      child: Icon(Icons.calendar_today_outlined, size: 40, color: AppTheme.primary)),
+                  CircleAvatar(
+                    radius: 45,
+                    backgroundColor: AppTheme.primaryLight,
+                    child: Icon(
+                      Icons.calendar_today_outlined,
+                      size: 40,
+                      color: AppTheme.primary,
+                    ),
+                  ),
                   SizedBox(height: 20),
-                  Text('Захиалга байхгүй байна',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+                  Text(
+                    'Захиалга байхгүй байна',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textDark,
+                    ),
+                  ),
                   SizedBox(height: 8),
-                  Text('Анхны захиалгаа хий',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textLight)),
+                  Text(
+                    'Анхны захиалгаа хий',
+                    style: TextStyle(fontSize: 13, color: AppTheme.textLight),
+                  ),
                 ],
               ),
             );
@@ -1445,14 +1870,29 @@ class _NotificationsPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(radius: 45, backgroundColor: AppTheme.primaryLight,
-                child: Icon(Icons.notifications_none_rounded, size: 44, color: AppTheme.primary)),
+            CircleAvatar(
+              radius: 45,
+              backgroundColor: AppTheme.primaryLight,
+              child: Icon(
+                Icons.notifications_none_rounded,
+                size: 44,
+                color: AppTheme.primary,
+              ),
+            ),
             SizedBox(height: 20),
-            Text('Мэдэгдэл байхгүй байна',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.textDark)),
+            Text(
+              'Мэдэгдэл байхгүй байна',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppTheme.textDark,
+              ),
+            ),
             SizedBox(height: 8),
-            Text('Шинэ мэдэгдэл ирэхэд энд харагдана',
-                style: TextStyle(fontSize: 13, color: AppTheme.textLight)),
+            Text(
+              'Шинэ мэдэгдэл ирэхэд энд харагдана',
+              style: TextStyle(fontSize: 13, color: AppTheme.textLight),
+            ),
           ],
         ),
       ),
@@ -1479,10 +1919,30 @@ class _HelpPage extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 8),
-          _helpCard(Icons.phone_outlined, 'Утас', '+976 7700 0000', const Color(0xFF1B75BC)),
-          _helpCard(Icons.email_outlined, 'И-мэйл', 'support@clinicbook.mn', const Color(0xFF00BFA5)),
-          _helpCard(Icons.access_time_outlined, 'Ажлын цаг', 'Да-Ба: 09:00-18:00', const Color(0xFFFF7043)),
-          _helpCard(Icons.location_on_outlined, 'Хаяг', 'Улаанбаатар, Монгол', const Color(0xFF7C4DFF)),
+          _helpCard(
+            Icons.phone_outlined,
+            'Утас',
+            '+976 7700 0000',
+            const Color(0xFF1B75BC),
+          ),
+          _helpCard(
+            Icons.email_outlined,
+            'И-мэйл',
+            'support@clinicbook.mn',
+            const Color(0xFF00BFA5),
+          ),
+          _helpCard(
+            Icons.access_time_outlined,
+            'Ажлын цаг',
+            'Да-Ба: 09:00-18:00',
+            const Color(0xFFFF7043),
+          ),
+          _helpCard(
+            Icons.location_on_outlined,
+            'Хаяг',
+            'Улаанбаатар, Монгол',
+            const Color(0xFF7C4DFF),
+          ),
         ],
       ),
     );
@@ -1495,22 +1955,42 @@ class _HelpPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 8, offset: Offset(0, 2))],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 48, height: 48,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(14)),
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textLight)),
+              Text(
+                label,
+                style: const TextStyle(fontSize: 12, color: AppTheme.textLight),
+              ),
               const SizedBox(height: 2),
-              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppTheme.textDark)),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textDark,
+                ),
+              ),
             ],
           ),
         ],
