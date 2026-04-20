@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/booking_provider.dart';
 import '../providers/profile_provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 
 class CompanyDashboardPage extends StatelessWidget {
@@ -966,11 +967,10 @@ class CompanyDashboardPage extends StatelessWidget {
                     style: TextStyle(color: AppTheme.textMedium)),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  Future.microtask(() {
-                    if (context.mounted) context.go('/');
-                  });
+                  await context.read<AuthProvider>().signOut();
+                  if (context.mounted) context.go('/');
                 },
                 child: const Text('Гарах',
                     style: TextStyle(

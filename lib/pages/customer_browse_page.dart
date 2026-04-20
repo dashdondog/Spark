@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:geolocator/geolocator.dart';
 import '../providers/booking_provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 
 class CustomerBrowsePage extends StatefulWidget {
@@ -1580,11 +1581,10 @@ class _ProfileTab extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  Future.microtask(() {
-                    if (context.mounted) context.go('/');
-                  });
+                  await context.read<AuthProvider>().signOut();
+                  if (context.mounted) context.go('/');
                 },
                 child: const Text(
                   'Гарах',
